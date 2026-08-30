@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using DG.Tweening;
+using UnityEngine.SocialPlatforms.Impl;
+using UnityEditor.PackageManager.Requests;
 
 [RequireComponent(typeof(LineRenderer))]
 public class Board : MonoBehaviour
@@ -17,7 +19,9 @@ public class Board : MonoBehaviour
     GameObject web_prefab;
 
     [SerializeField]
-    GameObject select_sprite;
+    GameObject select_prefab;
+    GameObject main_select;
+    List<GameObject> select_moves = new();
 
     [SerializeField]
     GameObject camera;
@@ -52,7 +56,6 @@ public class Board : MonoBehaviour
         web_grid = new Web[rows, cols];
         obs_grid = new Obstacle[rows, cols];
         SetCameraPos();
-        RemoveSelectSprite();
         SnapChildren();
         turn_system = turn_system_obj.GetComponent<TurnSystem>();
         line_renderer = GetComponent<LineRenderer>();
@@ -61,7 +64,10 @@ public class Board : MonoBehaviour
         line_renderer.endColor = Color.white;
         line_renderer.startWidth = 0.05f;
         line_renderer.startWidth = line_renderer.endWidth;
-        line_renderer.positionCount = 2; 
+        line_renderer.positionCount = 2;
+
+        main_select = Instantiate(select_prefab);
+        main_select.GetComponent<SpriteRenderer>().enabled = false;
     }
 
     // Update is called once per frame
@@ -166,6 +172,10 @@ public class Board : MonoBehaviour
 
         if (e is Rock || !successful_web_move)
         {
+            if (e is Enemy ene)
+            {
+                ene.RemoveStuck();
+            }
             RemoveWeb(end_pos);
         }
 
@@ -209,7 +219,7 @@ public class Board : MonoBehaviour
         }
         yield return StartCoroutine(e.Walk(GetWorldPos(next_pos)));
 
-        if (next_obs is Water && !(e is Birb b && b.IsFlying()))
+        if (next_obs is Water)
         {
             StartCoroutine(e.Shrink());
             obs_grid[curr_pos.x, curr_pos.y] = null;
@@ -440,16 +450,54 @@ public class Board : MonoBehaviour
 
     public void MoveSelectSprite(Vector2Int grid_pos)
     {
-        if (select_sprite.TryGetComponent(out SpriteRenderer s)) {
+        if (main_select.TryGetComponent(out SpriteRenderer s)) {
             s.enabled = true;
         }
-        select_sprite.transform.position = GetWorldPos(grid_pos);
+        main_select.transform.position = GetWorldPos(grid_pos);
     }
 
     public void RemoveSelectSprite()
     {
-        if (select_sprite.TryGetComponent(out SpriteRenderer s)) {
+        if (main_select.TryGetComponent(out SpriteRenderer s)) {
             s.enabled = false;
+        }
+    }
+
+    public void CreateSelectMove()
+    {
+        Vector2Int[] dir = new[]
+        {
+            new Vector2Int(0,1),
+            new Vector2Int(0,-1),
+            new Vector2Int(1,0),
+            new Vector2Int(-1,0),
+        };
+
+        foreach (Vector2Int d in dir)
+        {
+            Vector2Int new_pos = spooder_pos + d;
+            Spooder s = entity_grid[spooder_pos.x, spooder_pos.y] as Spooder;
+            if (IsValidMovePos(new_pos, s))
+            {
+                GameObject obj = Instantiate(select_prefab);
+                Vector2 world_pos = GetWorldPos(new_pos);
+                obj.transform.position = new(world_pos.x, world_pos.y, 0);
+                SpriteRenderer renderer = obj.GetComponent<SpriteRenderer>();
+                Color temp = renderer.color;
+                temp.a = 0.7f;
+                renderer.enabled = true;
+                renderer.color = temp;
+                select_moves.Add(obj);
+            }
+        }
+    }
+
+    public void RemoveSelectMove()
+    {
+        while(select_moves.Count() > 0)
+        {
+            Destroy(select_moves.First());
+            select_moves.RemoveAt(0);
         }
     }
 
@@ -484,7 +532,9 @@ public class Board : MonoBehaviour
         // u -> v
         float heuristic(Vector2Int u, Vector2Int v)
         {
-            return (u - v).sqrMagnitude;
+            Vector2 goal_diff = spout_pos - spooder_pos;
+            Vector2 diff = v - spooder_pos;
+            return (u - v).sqrMagnitude - 0.1f * Vector2.Dot(goal_diff, diff);
         }
 
         // g-value = distance from source to current location

@@ -18,6 +18,11 @@ public class Enemy : Entity
         return false;
     }
 
+    public void RemoveStuck()
+    {
+        curr_stuck = 0;
+    }
+
     public virtual void GetStuck()
     {
         curr_stuck = stuck_turns;

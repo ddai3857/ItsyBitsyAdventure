@@ -45,11 +45,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a9758c7ac6d72b047a8eb564a0bd715a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  max_web_charge: 3
-  web_charge: 3
+  max_web_charge: 1
+  web_charge: 1
   web_cooldown: 3
   turn_system_obj: {fileID: 0}
   web_place_range: 1
+  web_ui: {fileID: 0}
 --- !u!212 &3301788193160468134
 SpriteRenderer:
   serializedVersion: 3
