@@ -101,7 +101,7 @@ public class Board : MonoBehaviour
             yield break;
         }
 
-        Entity e = null;
+        Entity e;
 
         if (entity_grid[curr_pos.x, curr_pos.y] is Enemy en)
         {
@@ -156,13 +156,16 @@ public class Board : MonoBehaviour
     {
         Obstacle next_obs = obs_grid[next_pos.x, next_pos.y];
         Entity next_entity = entity_grid[next_pos.x, next_pos.y];
-        if (!is_rock && (next_obs is Rock || next_entity is Enemy))
+        if (!is_rock && (next_obs is Rock || next_entity is Enemy) && curr_pos != next_pos)
         {
             successful_web_move = false;
             yield break;
         }
 
         yield return StartCoroutine(e.Walk(GetWorldPos(next_pos)));
+
+        Debug.Log(next_obs is Water);
+        Debug.Log(!(e is Birb d && d.IsFlying()));
 
         if (next_obs is Water && !(e is Birb b && b.IsFlying()))
         {
@@ -231,11 +234,6 @@ public class Board : MonoBehaviour
                 successful_move = true;
                 yield break;
             }
-
-            if (web_grid[next_pos.x, next_pos.y] != null)
-            {
-                e.GetStuck();
-            }
         } else
         {
             if (Vector2Int.Distance(curr_pos, next_pos) != 1)
@@ -249,6 +247,12 @@ public class Board : MonoBehaviour
         }
 
         yield return StartCoroutine(curr_entity.Walk(GetWorldPos(next_pos)));
+
+        if (curr_entity is Enemy en && web_grid[next_pos.x, next_pos.y] != null)
+        {
+            en.GetStuck();
+            StartCoroutine(WebStep(en, next_pos, next_pos, false));
+        }
 
         if (spooder_pos == spout_pos)
         {
@@ -314,7 +318,7 @@ public class Board : MonoBehaviour
     public bool PlaceWeb(Vector2Int pos)
     {
         Spooder s = entity_grid[spooder_pos.x,spooder_pos.y] as Spooder;
-        if (Vector2Int.Distance(spooder_pos, pos) > s.web_place_range || web_grid[pos.x,pos.y] != null || web_grid[pos.x,pos.y] != null)
+        if (Vector2Int.Distance(spooder_pos, pos) > s.web_place_range || web_grid[pos.x,pos.y] != null || obs_grid[pos.x,pos.y] is Rock)
         {
             return false;
         }
@@ -327,6 +331,7 @@ public class Board : MonoBehaviour
         if (entity_grid[pos.x,pos.y] is Enemy e)
         {
             e.GetStuck();
+            StartCoroutine(WebStep(e, pos, pos, false));
         }
 
         GameObject web_object = Instantiate(web_prefab);
