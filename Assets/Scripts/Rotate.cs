@@ -3,16 +3,19 @@ using DG.Tweening;
 using UnityEditor.Tilemaps;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 // Called Rotate but holds a lot of extra code for menus and stuff too
 public class Rotate : MonoBehaviour
 {
     float rot_amount = 5;
-    float button_scale = 1.2F;
+    public float button_scale = 1.2F;
     float rot_time = 4;
     public bool flip = false;
     public GameObject menu_screen; // throwing evrything here. Do not copy this terrible code :skull:
+
+    public SceneFade screen_fade;
     public static bool menu_on = false;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -39,11 +42,15 @@ public class Rotate : MonoBehaviour
         }
     }
 
+
+
+    // Buttons
+
     public void StartButton()
     {
         if (!menu_on)
         {
-            print("Start");
+            screen_fade.EaseOut(transform.position).OnComplete(() => SceneManager.LoadScene("Levels"));
         }
     }    
     
@@ -79,6 +86,17 @@ public class Rotate : MonoBehaviour
         }
     }
 
+    public void LevelsBackButton()
+    {
+        screen_fade.EaseOut(transform.position).OnComplete(() => SceneManager.LoadScene("Title"));
+    }
+
+    public void RestartButton()
+    {
+        screen_fade.EaseOut(transform.position).OnComplete(() => SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex));
+    }
+
+    // Hover
     public void OnPointerEnter()
     {
         if (!menu_on || tag == "Menu")
@@ -88,7 +106,6 @@ public class Rotate : MonoBehaviour
         }
     }
 
-    // Triggered automatically when mouse leaves the button area
     public void OnPointerExit()
     {
         if (!menu_on || tag == "Menu")
