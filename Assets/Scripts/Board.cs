@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class Board : MonoBehaviour
@@ -17,15 +20,17 @@ public class Board : MonoBehaviour
     GameObject camera;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    Entity[,] grid;
+    Entity[,] entity_grid;
+    Obstacle[,] obs_grid;
     Web[,] web_grid;
 
     [SerializeField]
     Vector2Int spooder_pos;
     void Start()
     {
-        grid = new Entity[rows, cols];
+        entity_grid = new Entity[rows, cols];
         web_grid = new Web[rows, cols];
+        obs_grid = new Obstacle[rows, cols];
         SetCameraPos();
         RemoveSelectSprite();
         SnapChildren();
@@ -41,7 +46,7 @@ public class Board : MonoBehaviour
     {
         if (grid_pos.x < rows && grid_pos.y < cols)
         {
-            return grid[grid_pos.x, grid_pos.y];
+            return entity_grid[grid_pos.x, grid_pos.y];
         }
 
         return null;
@@ -66,16 +71,11 @@ public class Board : MonoBehaviour
 
     public bool Move(Vector2Int curr_pos, Vector2Int next_pos, bool web)
     {
-        Debug.Log(curr_pos);
-        Debug.Log(next_pos);
-        Debug.Log(Vector2Int.Distance(curr_pos, next_pos));
+        Entity curr_entity = entity_grid[curr_pos.x, curr_pos.y];
 
-        Entity curr_entity = grid[curr_pos.x, curr_pos.y];
-        Entity next_entity = grid[next_pos.x, next_pos.y];
-
-        if (next_entity != null)
+        if (IsValidMovePos(next_pos, curr_entity is Birb))
         {
-            Debug.Log("ENTITY IS ALREADY THERE");
+            Debug.Log("ENTITY IS ALREADY THERE OR OBSTACLE BLOCKING");
             return false;
         }
 
@@ -116,8 +116,8 @@ public class Board : MonoBehaviour
 
         curr_entity.Walk(GetWorldPos(next_pos));
 
-        grid[next_pos.x, next_pos.y] = curr_entity;
-        grid[curr_pos.x, curr_pos.y] = null;
+        entity_grid[next_pos.x, next_pos.y] = curr_entity;
+        entity_grid[curr_pos.x, curr_pos.y] = null;
 
         if (curr_entity is Spooder)
         {
@@ -127,6 +127,11 @@ public class Board : MonoBehaviour
         return true;
     }
 
+    bool IsValidMovePos(Vector2Int pos, bool birb)
+    {
+        return entity_grid[pos.x, pos.y] != null || (obs_grid[pos.x, pos.y] != null && !birb);
+    }
+
     //TODO
     public void MoveAllEnemies()
     {
@@ -134,7 +139,7 @@ public class Board : MonoBehaviour
         {
             for (int y = 0; y < cols; y++)
             {
-                Entity e = grid[x,y];
+                Entity e = entity_grid[x,y];
 
                 if (e is Enemy)
                 {
@@ -147,13 +152,13 @@ public class Board : MonoBehaviour
     //TODO
     Vector2Int BestEnemyMove(Vector2Int pos)
     {
-        return pos;
+        return AStar(pos, spooder_pos);
     }
 
     public bool PlaceWeb(Vector2Int pos)
     {
-        Spooder s = grid[spooder_pos.x,spooder_pos.y] as Spooder;
-        Entity e = grid[pos.x,pos.y];
+        Spooder s = entity_grid[spooder_pos.x,spooder_pos.y] as Spooder;
+        Entity e = entity_grid[pos.x,pos.y];
         if (Vector2Int.Distance(spooder_pos, pos) > s.web_place_range || e is Obstacle || web_grid[pos.x,pos.y] != null)
         {
             return false;
@@ -193,9 +198,9 @@ public class Board : MonoBehaviour
                 Vector2 world_pos = e.transform.position;
                 Vector2Int grid_pos = GetGridPos(world_pos);
                 e.transform.position = GetWorldPos(grid_pos);
-                if (grid[grid_pos.x, grid_pos.y] == null)
+                if (entity_grid[grid_pos.x, grid_pos.y] == null)
                 {
-                    grid[grid_pos.x, grid_pos.y] = e;
+                    entity_grid[grid_pos.x, grid_pos.y] = e;
                     if (e is Spooder)
                     {
                         spooder_pos = grid_pos;
@@ -238,5 +243,160 @@ public class Board : MonoBehaviour
     {
         Destroy(web_grid[pos.x,pos.y].gameObject);
         web_grid[pos.x,pos.y] = null;
+    }
+
+    readonly List<Vector2Int> directions = new()
+    {
+        new(0, 1),
+        new(0, -1),
+        new(1, 0),
+        new(-1, 0),
+    };
+
+    public Vector2Int AStar(Vector2Int source, Vector2Int dest)
+    {
+        Entity e = entity_grid[source.x, source.y];
+        // u -> v
+        float heuristic(Vector2Int u, Vector2Int v)
+        {
+            return (u - v).sqrMagnitude;
+        }
+
+        // g-value = distance from source to current location
+        // h-value = distance from current location to destination
+        // f-value = g + h
+
+        // (Location, f-value)
+        int sort_func(Tuple<Vector2Int, float> a, Tuple<Vector2Int, float> b)
+        {
+            int x1 = a.Item2.CompareTo(b.Item2);
+            int x2 = a.Item1.x.CompareTo(b.Item1.x);
+            int x3 = a.Item1.y.CompareTo(b.Item1.y);
+
+            if (x1 == 0)
+            {
+                if (x2 == 0)
+                {
+                    return x3;
+                }
+
+                return x2;
+            }
+
+            return x1;
+        }
+
+        SortedSet<Tuple<Vector2Int, float>> heap = new(Comparer<Tuple<Vector2Int, float>>.Create(sort_func)) { new(source, 0) };
+
+        // Done List
+        Dictionary<Vector2Int, int> done = new();
+
+        // (Children,Parent)
+        Dictionary<Vector2Int, Vector2Int> node = new();
+
+        // (Location, (g-value, h-value))
+        Dictionary<Vector2Int, Tuple<float, float>> values = new() { { source, new(0, 0) } };
+
+        // MAKE A DEEP COPY OF THE ROOM GRID SO WE DONT CHANGE IT IN THE ROOM VARIABLE
+        // 0 is walkable, -1 is wall, 1 is path
+        // if (room_data.room_grid == null)
+        // {
+        //     // Debug.Log($"{room_data.grid_size.x}, {room_data.grid_size.y}");
+
+        //     room_data.room_grid = new int[room_data.grid_size.y, room_data.grid_size.x];
+        //     foreach (Vector2Int obstacle in room_data.obstacle_locations)
+        //     {
+        //         // Debug.Log($"{obstacle.x }, {obstacle.y}");
+        //         room_data.room_grid[obstacle.y - room_data.grid_position.y, obstacle.x - room_data.grid_position.x] = -1;
+        //     }
+        // }
+
+        while (heap.Count > 0)
+        {
+            // We pop the location with the lowest f-value and put it in the done list
+            Tuple<Vector2Int, float> first = heap.First();
+            Vector2Int parent = first.Item1;
+
+            if (parent == dest)
+            {
+                break;
+            }
+
+            heap.Remove(first);
+            done.Add(parent, 0);
+
+            // We check every direction and calculate their f-values
+            // If the direction is already in the done list, we skip
+            // If the direction is already in the heap with higher f-value, then we update our heap with the current f-value
+            // If the direction is already in the heap with lower f-value, then we skip
+            foreach (Vector2Int d in directions)
+            {
+                Vector2Int child = parent + d;
+
+                // If child is a wall/obstacle, we skip
+                if (!IsValidPos(child) || !IsValidMovePos(child, e is Birb))
+                {
+                    continue;
+                }
+
+                // Removing diagonals that are impossible
+                // if (room_data.room_grid[(int)parent.y, (int)child.x] == -1 || room_data.room_grid[(int)child.y, (int)parent.x] == -1)
+                // {
+                //     continue;
+                // }
+
+                float new_g = values[parent].Item1 + heuristic(parent, child);
+                float new_h = heuristic(child, dest);
+
+                if (values.ContainsKey(child))
+                {
+                    float old_f = values[child].Item1 + values[child].Item2;
+
+                    if (done.ContainsKey(child) || old_f <= new_g + new_h)
+                    {
+                        // Debug.Log($"CO0NTINUED: {d}");
+                        continue;
+                    }
+
+                    heap.Remove(new Tuple<Vector2Int, float>(child, old_f));
+                    values[child] = new Tuple<float, float>(new_g, new_h);
+                }
+                else
+                {
+                    values.Add(child, new Tuple<float, float>(new_g, new_h));
+                }
+
+                if (node.ContainsKey(child))
+                {
+                    node[child] = parent;
+                }
+                else
+                {
+                    node.Add(child, parent);
+                }
+
+                heap.Add(new Tuple<Vector2Int, float>(child, new_g + new_h));
+
+            }
+        }
+
+        List<Vector2Int> ans = new();
+
+        Vector2Int curr = dest;
+        while (curr != source)
+        {
+            ans.Add(curr);
+            if (!node.ContainsKey(curr))
+            {
+                Debug.LogError($"{curr} and {dest} \n");
+                break;
+            }
+            else
+            {
+                curr = node[curr];
+            }
+        }
+
+        return ans.Last();
     }
 }
