@@ -56,14 +56,14 @@ public class Spooder : Entity
     }
 
     //TODO
-    public new virtual IEnumerator Squish()
+    public override IEnumerator Squish()
     {
         turn_system_obj.GetComponent<TurnSystem>().LoseGame();
         yield return StartCoroutine(base.Squish());
     }
 
     //TODO
-    public new virtual IEnumerator Shrink()
+    public override IEnumerator Shrink()
     {
         turn_system_obj.GetComponent<TurnSystem>().LoseGame();
         yield return StartCoroutine(base.Shrink());
