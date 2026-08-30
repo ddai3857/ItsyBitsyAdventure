@@ -73,6 +73,8 @@ public class Board : MonoBehaviour
     {
         Entity curr_entity = entity_grid[curr_pos.x, curr_pos.y];
 
+        Debug.Log(curr_entity + ": " + curr_pos +", " + next_pos);
+
         if (!IsValidMovePos(next_pos, curr_entity))
         {
             Debug.Log("ENTITY IS ALREADY THERE OR OBSTACLE BLOCKING");
@@ -140,17 +142,21 @@ public class Board : MonoBehaviour
     //TODO
     public void MoveAllEnemies()
     {
+        List<Vector2Int> move_list = new();
         for (int x = 0; x < rows; x++)
         {
             for (int y = 0; y < cols; y++)
             {
-                Entity e = entity_grid[x,y];
-
-                if (e is Enemy)
+                if (entity_grid[x,y] is Enemy)
                 {
-                    Move(new(x,y), BestEnemyMove(new(x,y)), false);
+                    move_list.Add(new(x,y));
                 }
             }
+        }
+
+        foreach (Vector2Int pos in move_list)
+        {
+            Move(pos, BestEnemyMove(pos), false);
         }
     }
 
@@ -321,8 +327,6 @@ public class Board : MonoBehaviour
             // We pop the location with the lowest f-value and put it in the done list
             Tuple<Vector2Int, float> first = heap.First();
             Vector2Int parent = first.Item1;
-
-            Debug.Log(parent);
 
             if (parent == dest)
             {
