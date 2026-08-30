@@ -268,7 +268,7 @@ public class Board : MonoBehaviour
     {
         if (e is Spooder)
         {
-            return entity_grid[pos.x, pos.y] == null && obs_grid[pos.x, pos.y] is Spout || obs_grid[pos.x, pos.y] == null;
+            return entity_grid[pos.x, pos.y] == null && (obs_grid[pos.x, pos.y] is Spout || obs_grid[pos.x, pos.y] == null);
         }
 
         return entity_grid[pos.x, pos.y] is not Enemy && (obs_grid[pos.x, pos.y] == null || e is Birb b && b.IsFlying());
