@@ -208,6 +208,7 @@ public class Board : MonoBehaviour
     {
         Obstacle next_obs = obs_grid[next_pos.x, next_pos.y];
         Entity next_entity = entity_grid[next_pos.x, next_pos.y];
+        Web next_web = web_grid[next_pos.x, next_pos.y];
         if (!is_rock && (next_obs is Rock || next_entity is Enemy) && curr_pos != next_pos)
         {
             successful_web_move = false;
@@ -222,14 +223,22 @@ public class Board : MonoBehaviour
         if (next_obs is Water)
         {
             StartCoroutine(e.Shrink());
-            obs_grid[curr_pos.x, curr_pos.y] = null;
-            entity_grid[curr_pos.x, curr_pos.y] = null;
-            successful_web_move = false;
+            if (curr_pos != next_pos)
+            {
+                obs_grid[curr_pos.x, curr_pos.y] = null;
+                entity_grid[curr_pos.x, curr_pos.y] = null;
+                successful_web_move = false;
+            }
             yield break;
         }
 
         if (is_rock)
         {
+            if (next_web != null)
+            {
+                Destroy(next_web);
+                web_grid[next_pos.x, next_pos.y] = null;
+            }
             if (next_obs != null)
             {
                 StartCoroutine(next_obs.Squish());
@@ -267,6 +276,17 @@ public class Board : MonoBehaviour
 
         Debug.Log(curr_entity + ": " + curr_pos +", " + next_pos);
 
+        if (curr_entity is Enemy e && e.IsStuck())
+        {
+            if (e.UpdateStuck())
+            {
+                RemoveWeb(curr_pos);
+            }
+
+            successful_move = true;
+            yield break;
+        }
+
         if (!IsValidMovePos(next_pos, curr_entity))
         {
             Debug.Log("ENTITY IS ALREADY THERE OR OBSTACLE BLOCKING");
@@ -274,31 +294,18 @@ public class Board : MonoBehaviour
             yield break;
         }
 
-        if (curr_entity is Enemy e)
+        if (Vector2Int.Distance(curr_pos, next_pos) != 1)
         {
-            if (e.IsStuck())
-            {
-                if (e.UpdateStuck())
-                {
-                    RemoveWeb(curr_pos);
-                }
-
-                successful_move = true;
-                yield break;
-            }
-        } else
-        {
-            if (Vector2Int.Distance(curr_pos, next_pos) != 1)
-            {
-                Debug.Log("OUT OF RANGE");
-                successful_move = false;
-                yield break;
-            }
-
-            spooder_pos = next_pos;
+            Debug.Log("OUT OF RANGE");
+            successful_move = false;
+            yield break;
         }
 
         yield return StartCoroutine(curr_entity.Walk(GetWorldPos(next_pos)));
+
+        if (curr_entity is Spooder) {
+            spooder_pos = next_pos;
+        }
 
         if (spooder_pos == spout_pos)
         {
@@ -484,7 +491,7 @@ public class Board : MonoBehaviour
                 obj.transform.position = new(world_pos.x, world_pos.y, 0);
                 SpriteRenderer renderer = obj.GetComponent<SpriteRenderer>();
                 Color temp = renderer.color;
-                temp.a = 0.7f;
+                temp.a = 0.5f;
                 renderer.enabled = true;
                 renderer.color = temp;
                 select_moves.Add(obj);
