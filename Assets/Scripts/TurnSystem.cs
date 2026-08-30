@@ -27,6 +27,7 @@ public class TurnSystem : MonoBehaviour
             screen_pos.z = 10f;
             Vector3 world_pos = Camera.main.ScreenToWorldPoint(screen_pos);
             Vector2Int grid_pos = grid.GetGridPos(world_pos);
+            Debug.Log(grid_pos);
 
             if (HandleInteraction(grid_pos))
             {
@@ -46,7 +47,7 @@ public class TurnSystem : MonoBehaviour
 
         if (selected_entity is Spooder)
         {
-            return grid.Move(selected_pos, grid_pos, true);
+            return grid.Move(selected_pos, grid_pos);
         }
 
         //HANDLE WEBS

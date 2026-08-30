@@ -1,8 +1,12 @@
 using UnityEngine;
+using DG.Tweening;
+using System.Collections;
 
 public class Entity : MonoBehaviour
 {
     public int speed;
+    [SerializeField]
+    int move_speed;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -15,8 +19,10 @@ public class Entity : MonoBehaviour
         
     }
 
-    public void Walk(Vector2Int curr_pos, Vector2Int next_pos)
+    public IEnumerator Walk(Vector2 next_pos)
     {
-        
+        yield return transform.DOMove(new(next_pos.x, next_pos.y, 0), move_speed)
+            .SetSpeedBased()
+            .SetEase(Ease.Linear);
     }
 }

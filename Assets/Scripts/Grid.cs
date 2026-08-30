@@ -39,12 +39,12 @@ public class Grid : MonoBehaviour
     }
 
     //TODO
-    public Vector2Int GetWorldPos(Vector2Int pos)
+    public Vector2 GetWorldPos(Vector2Int pos)
     {
-        return new Vector2Int(Mathf.FloorToInt(pos.x), Mathf.FloorToInt(pos.y));
+        return new Vector2(pos.x + 0.5f, pos.y + 0.5f);
     }
 
-    public bool Move(Vector2Int curr_pos, Vector2Int next_pos, bool walk)
+    public bool Move(Vector2Int curr_pos, Vector2Int next_pos)
     {
         Entity curr_entity = grid[curr_pos.x, curr_pos.y];
         Entity next_entity = grid[next_pos.x, next_pos.y];
@@ -64,10 +64,7 @@ public class Grid : MonoBehaviour
             return true;
         }
 
-        if (walk)
-        {
-            curr_entity.Walk(GetWorldPos(curr_pos), GetWorldPos(next_pos));
-        }
+        StartCoroutine(curr_entity.Walk(GetWorldPos(next_pos)));
 
         grid[curr_pos.x, curr_pos.y] = curr_entity;
 
@@ -89,7 +86,7 @@ public class Grid : MonoBehaviour
 
                 if (e is Enemy)
                 {
-                    Move(new(x,y), BestEnemyMove(new(x,y)), true);
+                    Move(new(x,y), BestEnemyMove(new(x,y)));
                 }
             }
         }
@@ -101,7 +98,7 @@ public class Grid : MonoBehaviour
         return new(-1,-1);
     }
 
-    bool PlaceWeb(Vector2Int pos)
+    public bool PlaceWeb(Vector2Int pos)
     {
         Spooder s = grid[spooder_pos.x,spooder_pos.y] as Spooder;
         Entity e = grid[pos.x,pos.y];
@@ -113,9 +110,20 @@ public class Grid : MonoBehaviour
         web_grid[pos.x,pos.y] = new();
 
         GameObject web_object = Instantiate(web_prefab);
-        Vector2Int world_pos = GetWorldPos(pos);
+        Vector2 world_pos = GetWorldPos(pos);
         web_object.transform.position = new(world_pos.x, world_pos.y, 0);
 
         return true;
+    }
+
+    void OnDrawGizmos()
+    {
+        for (int r = 0; r < rows; r++)
+        {
+            for (int c = 0; c < cols; c++)
+            {
+                Gizmos.DrawWireCube(GetWorldPos(new(r,c)), Vector3.one);
+            }
+        }
     }
 }
