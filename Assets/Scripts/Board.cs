@@ -511,6 +511,16 @@ public class Board : MonoBehaviour
             return x1;
         }
 
+        bool IsValidMoveAstart(Vector2Int pos)
+        {
+            if (e is Birb b && b.IsFlying())
+            {
+                return obs_grid[pos.x, pos.y] is not DarkGrass;
+            }
+
+            return obs_grid[pos.x, pos.y] == null;
+        }
+
         SortedSet<Tuple<Vector2Int, float>> heap = new(Comparer<Tuple<Vector2Int, float>>.Create(sort_func)) { new(source, 0) };
 
         // Done List
@@ -559,7 +569,7 @@ public class Board : MonoBehaviour
                 Vector2Int child = parent + d;
 
                 // If child is a wall/obstacle, we skip
-                if (!IsValidPos(child) || !IsValidMovePos(child, e))
+                if (!(IsValidPos(child) && IsValidMoveAstart(child)))
                 {
                     continue;
                 }
