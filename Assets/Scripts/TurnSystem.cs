@@ -1,9 +1,10 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class TurnSystem : MonoBehaviour
 {
-    int curr_turn = 0;
+    int curr_turn = 1;
     [SerializeField]
     Entity selected_entity = null;
     [SerializeField]
@@ -18,6 +19,8 @@ public class TurnSystem : MonoBehaviour
 
     [SerializeField]
     GameObject spooder_obj;
+
+    public bool can_interact = true;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -28,6 +31,11 @@ public class TurnSystem : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (!can_interact)
+        {
+            return;
+        }
+        
         if (interact.WasPressedThisFrame())
         {
             Vector2Int grid_pos = GetMouseGridPos();
@@ -35,11 +43,8 @@ public class TurnSystem : MonoBehaviour
             if (grid.IsValidPos(grid_pos))
             {
                 grid.MoveSelectSprite(grid_pos);
-
-                if (HandleInteraction(grid_pos))
-                {
-                    EndTurn();
-                }
+                can_interact = false;
+                StartCoroutine(HandleInteraction(grid_pos));
             }
         }
 
@@ -62,43 +67,47 @@ public class TurnSystem : MonoBehaviour
         return grid.GetGridPos(world_pos);
     }
 
-    bool HandleInteraction(Vector2Int grid_pos)
+    IEnumerator HandleInteraction(Vector2Int grid_pos)
     {
         Entity new_selected = grid.Get(grid_pos);
         Web new_web = grid.GetWeb(grid_pos);
         if (selected_entity is Spooder)
         {
-            if (!grid.Move(selected_pos, grid_pos))
+            yield return StartCoroutine(grid.Move(selected_pos, grid_pos));
+            if (!grid.CheckMoveStatus())
             {
                 RemoveSelection();
-                return false;
+                can_interact = true;
+                yield break;
             }
-
-            return true;
-        }
-
-        if (selected_web != null)
+        }else if (selected_web != null)
         {
-            if (!grid.WebMove(grid_pos, selected_pos))
+            yield return StartCoroutine(grid.WebMove(grid_pos, selected_pos));
+            if (!grid.CheckMoveStatus())
             {
                 RemoveSelection();
-                return false;
+                can_interact = true;
+                yield break;
             }
-
-            return true;
+        } else
+        {
+            selected_web = new_web;
+            selected_entity = new_selected;
+            selected_pos = grid_pos;
+            can_interact = true;
+            yield break;
         }
 
-        selected_web = new_web;
-        selected_entity = new_selected;
-        selected_pos = grid_pos;
-        return false;
+        yield return StartCoroutine(EndTurn());
+        can_interact = true;
     }
 
-    void EndTurn()
+    IEnumerator EndTurn()
     {
         RemoveSelection();
-        grid.MoveAllEnemies();
         spooder_obj.GetComponent<Spooder>().UpdateTimer();
+        yield return StartCoroutine(grid.MoveAllEnemies());
+        curr_turn += 1;
     }
 
     void RemoveSelection()

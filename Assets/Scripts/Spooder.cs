@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class Spooder : Entity
@@ -43,5 +44,20 @@ public class Spooder : Entity
             return true;
         }
         return false;
+    }
+
+    public void GetEaten()
+    {
+        
+    }
+
+    public new virtual IEnumerator Squish()
+    {
+        yield break;
+    }
+
+    public new virtual IEnumerator Shrink()
+    {
+        yield break;
     }
 }

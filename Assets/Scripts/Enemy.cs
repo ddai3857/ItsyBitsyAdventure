@@ -29,7 +29,7 @@ public class Enemy : Entity
         return false;
     }
 
-    public void GetStuck()
+    public virtual void GetStuck()
     {
         curr_stuck = stuck_turns;
     }
