@@ -1,4 +1,3 @@
-using Unity.Collections;
 using UnityEngine;
 
 public class Board : MonoBehaviour
@@ -14,14 +13,20 @@ public class Board : MonoBehaviour
     [SerializeField]
     GameObject select_sprite;
 
+    [SerializeField]
+    GameObject camera;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     Entity[,] grid;
     Web[,] web_grid;
 
+    [SerializeField]
     Vector2Int spooder_pos;
     void Start()
     {
         grid = new Entity[rows, cols];
+        web_grid = new Web[rows, cols];
+        SetCameraPos();
         RemoveSelectSprite();
         SnapChildren();
     }
@@ -34,7 +39,21 @@ public class Board : MonoBehaviour
 
     public Entity Get(Vector2Int grid_pos)
     {
-        return grid[grid_pos.x, grid_pos.y];
+        if (grid_pos.x < rows && grid_pos.y < cols)
+        {
+            return grid[grid_pos.x, grid_pos.y];
+        }
+
+        return null;
+    }
+    public Web GetWeb(Vector2Int grid_pos)
+    {
+        if (grid_pos.x < rows && grid_pos.y < cols)
+        {
+            return web_grid[grid_pos.x, grid_pos.y];
+        }
+
+        return null;
     }
     public Vector2Int GetGridPos(Vector2 pos)
     {
@@ -45,32 +64,60 @@ public class Board : MonoBehaviour
         return new Vector2(pos.x + 0.5f, pos.y + 0.5f);
     }
 
-    public bool Move(Vector2Int curr_pos, Vector2Int next_pos)
+    public bool Move(Vector2Int curr_pos, Vector2Int next_pos, bool web)
     {
         Debug.Log(curr_pos);
         Debug.Log(next_pos);
+        Debug.Log(Vector2Int.Distance(curr_pos, next_pos));
 
         Entity curr_entity = grid[curr_pos.x, curr_pos.y];
         Entity next_entity = grid[next_pos.x, next_pos.y];
 
-        if (next_entity != null || Vector2Int.Distance(curr_pos, next_pos) > curr_entity.speed)
+        if (next_entity != null)
         {
+            Debug.Log("ENTITY IS ALREADY THERE");
             return false;
         }
 
-        if (curr_entity is Enemy e && web_grid[curr_pos.x, curr_pos.y] != null)
+        if (web)
         {
-            if (e.UpdateStuck())
+            if (curr_pos.x - next_pos.x != 0 && curr_pos.y - next_pos.y != 0)
             {
-                web_grid[curr_pos.x, curr_pos.y] = null;
+                Debug.Log("CAN'T MOVE ENEMIES DIAGONALLY");
+                return false;
             }
+            if (curr_entity is Enemy e)
+            {
+                if (web)
+                {
+                    if (e.IsStuck())
+                    {
+                        Debug.Log("ENEMY ALREADY STUCK");
+                        return false;
+                    }
 
-            return true;
+                    e.GetStuck();
+                }
+                else if (web_grid[curr_pos.x, curr_pos.y] != null && e.UpdateStuck())
+                {
+                    RemoveWeb(curr_pos);
+                    return true;
+                }
+            } else
+            {
+                RemoveWeb(curr_pos);
+            }
+            
+        } else if (Vector2Int.Distance(curr_pos, next_pos) > curr_entity.speed)
+        {
+            Debug.Log("OUT OF RANGE");
+            return false;
         }
 
         curr_entity.Walk(GetWorldPos(next_pos));
 
         grid[next_pos.x, next_pos.y] = curr_entity;
+        grid[curr_pos.x, curr_pos.y] = null;
 
         if (curr_entity is Spooder)
         {
@@ -89,10 +136,10 @@ public class Board : MonoBehaviour
             {
                 Entity e = grid[x,y];
 
-                // if (e is Enemy)
-                // {
-                //     Move(new(x,y), BestEnemyMove(new(x,y)));
-                // }
+                if (e is Enemy)
+                {
+                    Move(new(x,y), BestEnemyMove(new(x,y)), false);
+                }
             }
         }
     }
@@ -100,7 +147,7 @@ public class Board : MonoBehaviour
     //TODO
     Vector2Int BestEnemyMove(Vector2Int pos)
     {
-        return new(-1,-1);
+        return pos;
     }
 
     public bool PlaceWeb(Vector2Int pos)
@@ -112,11 +159,16 @@ public class Board : MonoBehaviour
             return false;
         }
 
-        web_grid[pos.x,pos.y] = new();
+        if (!s.PlaceWeb())
+        {
+            return false;
+        }
 
         GameObject web_object = Instantiate(web_prefab);
         Vector2 world_pos = GetWorldPos(pos);
         web_object.transform.position = new(world_pos.x, world_pos.y, 0);
+
+        web_grid[pos.x,pos.y] = web_object.GetComponent<Web>();
 
         return true;
     }
@@ -144,6 +196,10 @@ public class Board : MonoBehaviour
                 if (grid[grid_pos.x, grid_pos.y] == null)
                 {
                     grid[grid_pos.x, grid_pos.y] = e;
+                    if (e is Spooder)
+                    {
+                        spooder_pos = grid_pos;
+                    }
                 } else
                 {
                     Debug.LogError("TWO ENTITIES IN THE SAME SQUARE");
@@ -154,11 +210,33 @@ public class Board : MonoBehaviour
 
     public void MoveSelectSprite(Vector2Int grid_pos)
     {
+        if (select_sprite.TryGetComponent(out SpriteRenderer s)) {
+            s.enabled = true;
+        }
         select_sprite.transform.position = GetWorldPos(grid_pos);
     }
 
     public void RemoveSelectSprite()
     {
-        select_sprite.transform.position = GetWorldPos(new(-1,-1));
+        if (select_sprite.TryGetComponent(out SpriteRenderer s)) {
+            s.enabled = false;
+        }
+    }
+
+    void SetCameraPos()
+    {
+        Vector3 camera_pos = GetWorldPos(new(rows / 2, cols / 2));
+        camera.transform.position = new(camera_pos.x - 0.5f, camera_pos.y - 0.5f, -10);
+    }
+
+    public bool IsValidPos(Vector2Int pos)
+    {
+        return 0 <= pos.x && pos.x < rows && 0 <= pos.y && pos.y < cols;
+    }
+
+    public void RemoveWeb(Vector2Int pos)
+    {
+        Destroy(web_grid[pos.x,pos.y].gameObject);
+        web_grid[pos.x,pos.y] = null;
     }
 }

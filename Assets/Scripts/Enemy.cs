@@ -29,4 +29,14 @@ public class Enemy : Entity
 
         return false;
     }
+
+    public void GetStuck()
+    {
+        curr_stuck = stuck_turns;
+    }
+
+    public bool IsStuck()
+    {
+        return curr_stuck > 0;
+    }
 }

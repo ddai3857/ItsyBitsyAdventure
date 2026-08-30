@@ -5,8 +5,7 @@ using System.Collections;
 public class Entity : MonoBehaviour
 {
     public int speed;
-    [SerializeField]
-    int move_speed;
+    readonly int move_speed = 2;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {

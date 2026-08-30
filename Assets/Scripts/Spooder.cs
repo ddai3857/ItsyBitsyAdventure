@@ -34,4 +34,14 @@ public class Spooder : Entity
             web_timer = 0;
         }
     }
+
+    public bool PlaceWeb()
+    {
+        if (web_charge > 0)
+        {
+            web_charge--;
+            return true;
+        }
+        return false;
+    }
 }

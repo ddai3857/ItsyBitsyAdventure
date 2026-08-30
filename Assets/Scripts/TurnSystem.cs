@@ -4,7 +4,11 @@ using UnityEngine.InputSystem;
 public class TurnSystem : MonoBehaviour
 {
     int curr_turn = 0;
+    [SerializeField]
     Entity selected_entity = null;
+    [SerializeField]
+    Web selected_web = null;
+    [SerializeField]
     Vector2Int selected_pos = new(-1,-1);
     InputAction interact;
     InputAction web;
@@ -23,45 +27,81 @@ public class TurnSystem : MonoBehaviour
     {
         if (interact.WasPressedThisFrame())
         {
-            Vector3 screen_pos = Mouse.current.position.ReadValue();
-            screen_pos.z = 10f;
-            Vector3 world_pos = Camera.main.ScreenToWorldPoint(screen_pos);
-            Vector2Int grid_pos = grid.GetGridPos(world_pos);
+            Vector2Int grid_pos = GetMouseGridPos();
 
-            grid.MoveSelectSprite(grid_pos);
-
-            if (HandleInteraction(grid_pos))
+            if (grid.IsValidPos(grid_pos))
             {
-                EndTurn();
+                grid.MoveSelectSprite(grid_pos);
+
+                if (HandleInteraction(grid_pos))
+                {
+                    EndTurn();
+                }
             }
         }
+
+        if (web.WasPressedThisFrame())
+        {
+            Vector2Int grid_pos = GetMouseGridPos();
+
+            if (grid.IsValidPos(grid_pos))
+            {
+                grid.PlaceWeb(grid_pos);
+            }
+        }
+    }
+
+    Vector2Int GetMouseGridPos()
+    {
+        Vector3 screen_pos = Mouse.current.position.ReadValue();
+        screen_pos.z = 10f;
+        Vector3 world_pos = Camera.main.ScreenToWorldPoint(screen_pos);
+        return grid.GetGridPos(world_pos);
     }
 
     bool HandleInteraction(Vector2Int grid_pos)
     {
         Entity new_selected = grid.Get(grid_pos);
-        if (selected_entity == null)
-        {
-            selected_entity = new_selected;
-            selected_pos = grid_pos;
-            return false;
-        }
-
+        Web new_web = grid.GetWeb(grid_pos);
         if (selected_entity is Spooder)
         {
-            return grid.Move(selected_pos, grid_pos);
+            if (!grid.Move(selected_pos, grid_pos, false))
+            {
+                RemoveSelection();
+                return false;
+            }
+
+            return true;
         }
 
-        //HANDLE WEBS
+        if (selected_web != null)
+        {
+            if (!grid.Move(grid_pos, selected_pos, true))
+            {
+                RemoveSelection();
+                return false;
+            }
 
+            return true;
+        }
+
+        selected_web = new_web;
+        selected_entity = new_selected;
+        selected_pos = grid_pos;
         return false;
     }
 
     void EndTurn()
     {
+        RemoveSelection();
+        grid.MoveAllEnemies();
+    }
+
+    void RemoveSelection()
+    {
         grid.RemoveSelectSprite();
         selected_entity = null;
-        selected_pos = new(-1,-1);
-        grid.MoveAllEnemies();
+        selected_web = null;
+        selected_pos = new(-1,-1);   
     }
 }
