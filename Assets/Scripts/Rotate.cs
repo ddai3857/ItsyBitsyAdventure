@@ -1,24 +1,65 @@
 using System.Collections;
+using DG.Tweening;
+using UnityEditor.Tilemaps;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class Rotate : MonoBehaviour
 {
+
+    float rot_amount = 5;
+    float button_scale = 1.2F;
+    float rot_time = 4;
+    public bool flip = false;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        
+        if (flip)
+        {
+            rot_amount *= -1;
+        }
+        StartCoroutine(Rot());
     }
 
-    // Update is called once per frame
-    void Update()
+    public IEnumerator Rot()
     {
-        
+        while (true)
+        {
+            yield return transform.DORotate(new (0,0,rot_amount), rot_time)
+                .SetEase(Ease.InOutSine)
+                .WaitForCompletion();
+            yield return transform.DORotate(new (0,0,-rot_amount), rot_time)
+                .SetEase(Ease.InOutSine)
+                .WaitForCompletion();   
+        }
     }
 
-    public IEnumerator Walk(Vector2 next_pos)
+    public void StartButton()
     {
-        yield return transform.DOMove(new(next_pos.x, next_pos.y, 0), move_speed)
-            .SetSpeedBased()
-            .SetEase(Ease.Linear);
+        print("Start");
+    }    
+    
+    public void MenuButton()
+    {
+        print("Menu");
+    }
+
+    public void QuitButton()
+    {
+        Application.Quit();
+        print("Quit");
+    }
+
+    public void OnPointerEnter()
+    {
+        transform.DOScale(button_scale, 1)
+            .SetEase(Ease.OutCubic);
+    }
+
+    // Triggered automatically when mouse leaves the button area
+    public void OnPointerExit()
+    {
+        transform.DOScale(1, 1)
+            .SetEase(Ease.OutCubic);
     }
 }
