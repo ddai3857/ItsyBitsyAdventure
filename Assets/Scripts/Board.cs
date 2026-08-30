@@ -69,14 +69,57 @@ public class Board : MonoBehaviour
         return new Vector2(pos.x + 0.5f, pos.y + 0.5f);
     }
 
-    public bool Move(Vector2Int curr_pos, Vector2Int next_pos, bool web)
+    public bool WebMove(Vector2Int curr_pos, Vector2Int next_pos)
     {
-        Entity curr_entity = entity_grid[curr_pos.x, curr_pos.y];
-
-        if (curr_entity == null)
+        if (curr_pos.x - next_pos.x != 0 && curr_pos.y - next_pos.y != 0)
         {
+            Debug.Log("CAN'T MOVE ENEMIES DIAGONALLY");
             return false;
         }
+
+        if (entity_grid[next_pos.x,next_pos.y] != null)
+        {
+            Debug.Log("ANOTHER ENEMY IS IN THE WEB");
+            return false;
+        }
+
+        Enemy en = entity_grid[curr_pos.x, curr_pos.y] as Enemy;
+
+        if (en != null)
+        {
+            if (en.IsStuck())
+            {
+                Debug.Log("ENEMY ALREADY STUCK");
+                return false;
+            }
+
+            en.GetStuck();
+
+            StartCoroutine(en.Walk(GetWorldPos(next_pos)));
+
+            entity_grid[next_pos.x, next_pos.y] = en;
+            entity_grid[curr_pos.x, curr_pos.y] = null;
+            return true;
+        }
+
+        Rock r = obs_grid[curr_pos.x, curr_pos.y] as Rock;
+        
+        if (r != null)
+        {
+            RemoveWeb(curr_pos);
+            StartCoroutine(r.Walk(GetWorldPos(next_pos)));
+
+            obs_grid[next_pos.x, next_pos.y] = r;
+            obs_grid[curr_pos.x, curr_pos.y] = null;
+            return true;
+        }
+
+        return false;
+    }
+
+    public bool Move(Vector2Int curr_pos, Vector2Int next_pos)
+    {
+        Entity curr_entity = entity_grid[curr_pos.x, curr_pos.y];
 
         Debug.Log(curr_entity + ": " + curr_pos +", " + next_pos);
 
@@ -86,35 +129,14 @@ public class Board : MonoBehaviour
             return false;
         }
 
-        if (web)
+        if (curr_entity is Enemy e && e.IsStuck())
         {
-            if (curr_pos.x - next_pos.x != 0 && curr_pos.y - next_pos.y != 0)
-            {
-                Debug.Log("CAN'T MOVE ENEMIES DIAGONALLY");
-                return false;
-            }
-            if (curr_entity is Enemy e)
-            {
-                if (web)
-                {
-                    if (e.IsStuck())
-                    {
-                        Debug.Log("ENEMY ALREADY STUCK");
-                        return false;
-                    }
-
-                    e.GetStuck();
-                }
-                else if (web_grid[curr_pos.x, curr_pos.y] != null && e.UpdateStuck())
-                {
-                    RemoveWeb(curr_pos);
-                    return true;
-                }
-            } else
+            if (e.UpdateStuck())
             {
                 RemoveWeb(curr_pos);
             }
-            
+
+            return true;
         } else if (Vector2Int.Distance(curr_pos, next_pos) > curr_entity.speed)
         {
             Debug.Log("OUT OF RANGE");
@@ -161,7 +183,7 @@ public class Board : MonoBehaviour
 
         foreach (Vector2Int pos in move_list)
         {
-            Move(pos, BestEnemyMove(pos), false);
+            Move(pos, BestEnemyMove(pos));
         }
     }
 

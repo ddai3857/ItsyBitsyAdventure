@@ -65,7 +65,7 @@ public class TurnSystem : MonoBehaviour
         Web new_web = grid.GetWeb(grid_pos);
         if (selected_entity is Spooder)
         {
-            if (!grid.Move(selected_pos, grid_pos, false))
+            if (!grid.Move(selected_pos, grid_pos))
             {
                 RemoveSelection();
                 return false;
@@ -76,7 +76,7 @@ public class TurnSystem : MonoBehaviour
 
         if (selected_web != null)
         {
-            if (!grid.Move(grid_pos, selected_pos, true))
+            if (!grid.WebMove(grid_pos, selected_pos))
             {
                 RemoveSelection();
                 return false;
