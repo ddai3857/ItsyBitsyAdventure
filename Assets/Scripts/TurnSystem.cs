@@ -117,4 +117,16 @@ public class TurnSystem : MonoBehaviour
         selected_web = null;
         selected_pos = new(-1,-1);   
     }
+
+    //TODO
+    public void LoseGame()
+    {
+        Debug.Log("YOU LOSE!");
+    }
+
+    //TODO
+    public void WinGame()
+    {
+        Debug.Log("YOU WIN!");
+    }
 }

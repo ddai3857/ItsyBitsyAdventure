@@ -5,7 +5,6 @@ using System.Collections;
 [RequireComponent(typeof(SpriteRenderer))]
 public class Entity : MonoBehaviour
 {
-    private static readonly WaitForSeconds _waitForSeconds2 = new(2);
     readonly int move_speed = 2;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -28,8 +27,8 @@ public class Entity : MonoBehaviour
 
     public virtual IEnumerator Squish()
     {
-        yield return transform.DOScaleY(0.5f, 0.1f).SetEase(Ease.Linear).WaitForCompletion();
-        yield return _waitForSeconds2;
+        yield return transform.DOScaleY(0.5f, 0.2f).SetEase(Ease.Linear).WaitForCompletion();
+        yield return new WaitForSeconds(0.5f);
         Destroy(gameObject);
     }
 

@@ -12,6 +12,9 @@ public class Spooder : Entity
     int web_timer = 0;
 
     [SerializeField]
+    GameObject turn_system_obj;
+
+    [SerializeField]
     public int web_place_range;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -46,18 +49,23 @@ public class Spooder : Entity
         return false;
     }
 
+    //TODO
     public void GetEaten()
     {
-        
+        turn_system_obj.GetComponent<TurnSystem>().LoseGame();
     }
 
+    //TODO
     public new virtual IEnumerator Squish()
     {
-        yield break;
+        turn_system_obj.GetComponent<TurnSystem>().LoseGame();
+        yield return StartCoroutine(base.Squish());
     }
 
+    //TODO
     public new virtual IEnumerator Shrink()
     {
-        yield break;
+        turn_system_obj.GetComponent<TurnSystem>().LoseGame();
+        yield return StartCoroutine(base.Shrink());
     }
 }

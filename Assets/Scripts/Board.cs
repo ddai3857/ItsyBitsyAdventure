@@ -20,13 +20,16 @@ public class Board : MonoBehaviour
     [SerializeField]
     GameObject camera;
 
+    [SerializeField]
+    GameObject turn_system_obj;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     Entity[,] entity_grid;
     Obstacle[,] obs_grid;
     Web[,] web_grid;
 
-    [SerializeField]
     Vector2Int spooder_pos;
+    Vector2Int spout_pos;
 
     bool successful_move = false;
     bool successful_web_move = false;
@@ -171,6 +174,10 @@ public class Board : MonoBehaviour
             if (next_obs != null)
             {
                 StartCoroutine(next_obs.Squish());
+                if (next_obs is Spout)
+                {
+                    turn_system_obj.GetComponent<TurnSystem>().LoseGame();
+                }
             } else if (next_entity != null && !(next_entity is Birb c && c.IsFlying()))
             {
                 StartCoroutine(next_entity.Squish());
@@ -236,13 +243,21 @@ public class Board : MonoBehaviour
         entity_grid[next_pos.x, next_pos.y] = curr_entity;
         entity_grid[curr_pos.x, curr_pos.y] = null;
         successful_move = true;
+
+        if (spooder_pos == spout_pos)
+        {
+            turn_system_obj.GetComponent<TurnSystem>().WinGame();
+        } else if (curr_entity is Enemy && next_pos == spooder_pos)
+        {
+            turn_system_obj.GetComponent<TurnSystem>().LoseGame();
+        }
     }
 
     bool IsValidMovePos(Vector2Int pos, Entity e)
     {
         if (e is Spooder)
         {
-            return entity_grid[pos.x, pos.y] == null && obs_grid[pos.x, pos.y] == null;
+            return entity_grid[pos.x, pos.y] == null && obs_grid[pos.x, pos.y] is Spout || obs_grid[pos.x, pos.y] == null;
         }
 
         return entity_grid[pos.x, pos.y] is not Enemy && (obs_grid[pos.x, pos.y] == null || e is Birb b && b.IsFlying());
@@ -336,6 +351,10 @@ public class Board : MonoBehaviour
                     if (obs_grid[grid_pos.x, grid_pos.y] == null)
                     {
                         obs_grid[grid_pos.x, grid_pos.y] = o;
+                        if (o is Spout)
+                        {
+                            spout_pos = grid_pos;
+                        }
                     } else
                     {
                         Debug.LogError("TWO OBSTACLES IN THE SAME SQUARE");
