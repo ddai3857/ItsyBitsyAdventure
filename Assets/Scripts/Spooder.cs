@@ -17,6 +17,12 @@ public class Spooder : Entity
     [SerializeField]
     public int web_place_range;
     public WebUI web_ui;
+
+    public void Start()
+    {
+        StartCoroutine(SpriteFlipLoop());
+        web_ui.UpdateWebCount(web_charge);
+    }
     public void UpdateTimer()
     {
         if (max_web_charge == web_charge)
