@@ -19,10 +19,10 @@ public class Entity : MonoBehaviour
         
     }
 
-    public IEnumerator Walk(Vector2 next_pos)
+    public void Walk(Vector2 next_pos)
     {
-        yield return transform.DOMove(new(next_pos.x, next_pos.y, 0), move_speed)
+        transform.DOMove(new(next_pos.x, next_pos.y, 0), move_speed)
             .SetSpeedBased()
-            .SetEase(Ease.Linear);
+            .SetEase(Ease.Linear).WaitForCompletion();
     }
 }

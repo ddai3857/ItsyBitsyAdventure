@@ -1,7 +1,7 @@
 using Unity.Collections;
 using UnityEngine;
 
-public class Grid : MonoBehaviour
+public class Board : MonoBehaviour
 {
     [SerializeField]
     int rows;
@@ -11,6 +11,9 @@ public class Grid : MonoBehaviour
     [SerializeField]
     GameObject web_prefab;
 
+    [SerializeField]
+    GameObject select_sprite;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     Entity[,] grid;
     Web[,] web_grid;
@@ -19,6 +22,8 @@ public class Grid : MonoBehaviour
     void Start()
     {
         grid = new Entity[rows, cols];
+        RemoveSelectSprite();
+        SnapChildren();
     }
 
     // Update is called once per frame
@@ -31,14 +36,10 @@ public class Grid : MonoBehaviour
     {
         return grid[grid_pos.x, grid_pos.y];
     }
-
-    //TODO
     public Vector2Int GetGridPos(Vector2 pos)
     {
         return new Vector2Int(Mathf.FloorToInt(pos.x), Mathf.FloorToInt(pos.y));
     }
-
-    //TODO
     public Vector2 GetWorldPos(Vector2Int pos)
     {
         return new Vector2(pos.x + 0.5f, pos.y + 0.5f);
@@ -46,6 +47,9 @@ public class Grid : MonoBehaviour
 
     public bool Move(Vector2Int curr_pos, Vector2Int next_pos)
     {
+        Debug.Log(curr_pos);
+        Debug.Log(next_pos);
+
         Entity curr_entity = grid[curr_pos.x, curr_pos.y];
         Entity next_entity = grid[next_pos.x, next_pos.y];
 
@@ -64,9 +68,9 @@ public class Grid : MonoBehaviour
             return true;
         }
 
-        StartCoroutine(curr_entity.Walk(GetWorldPos(next_pos)));
+        curr_entity.Walk(GetWorldPos(next_pos));
 
-        grid[curr_pos.x, curr_pos.y] = curr_entity;
+        grid[next_pos.x, next_pos.y] = curr_entity;
 
         if (curr_entity is Spooder)
         {
@@ -76,6 +80,7 @@ public class Grid : MonoBehaviour
         return true;
     }
 
+    //TODO
     public void MoveAllEnemies()
     {
         for (int x = 0; x < rows; x++)
@@ -84,10 +89,10 @@ public class Grid : MonoBehaviour
             {
                 Entity e = grid[x,y];
 
-                if (e is Enemy)
-                {
-                    Move(new(x,y), BestEnemyMove(new(x,y)));
-                }
+                // if (e is Enemy)
+                // {
+                //     Move(new(x,y), BestEnemyMove(new(x,y)));
+                // }
             }
         }
     }
@@ -125,5 +130,35 @@ public class Grid : MonoBehaviour
                 Gizmos.DrawWireCube(GetWorldPos(new(r,c)), Vector3.one);
             }
         }
+    }
+
+    void SnapChildren()
+    {
+        foreach (Transform child in transform)
+        {
+            if (child.gameObject.TryGetComponent(out Entity e))
+            {
+                Vector2 world_pos = e.transform.position;
+                Vector2Int grid_pos = GetGridPos(world_pos);
+                e.transform.position = GetWorldPos(grid_pos);
+                if (grid[grid_pos.x, grid_pos.y] == null)
+                {
+                    grid[grid_pos.x, grid_pos.y] = e;
+                } else
+                {
+                    Debug.LogError("TWO ENTITIES IN THE SAME SQUARE");
+                }
+            }
+        }
+    }
+
+    public void MoveSelectSprite(Vector2Int grid_pos)
+    {
+        select_sprite.transform.position = GetWorldPos(grid_pos);
+    }
+
+    public void RemoveSelectSprite()
+    {
+        select_sprite.transform.position = GetWorldPos(new(-1,-1));
     }
 }

@@ -15,10 +15,10 @@ public class Rotate : MonoBehaviour
         
     }
 
-    public IEnumerator Walk(Vector2 next_pos)
-    {
-        yield return transform.DOMove(new(next_pos.x, next_pos.y, 0), move_speed)
-            .SetSpeedBased()
-            .SetEase(Ease.Linear);
-    }
+    // public IEnumerator Walk(Vector2 next_pos)
+    // {
+    //     yield return transform.DOMove(new(next_pos.x, next_pos.y, 0), move_speed)
+    //         .SetSpeedBased()
+    //         .SetEase(Ease.Linear);
+    // }
 }

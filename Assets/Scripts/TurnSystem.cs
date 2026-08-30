@@ -10,7 +10,7 @@ public class TurnSystem : MonoBehaviour
     InputAction web;
 
     [SerializeField]
-    Grid grid;
+    Board grid;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -21,13 +21,14 @@ public class TurnSystem : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (interact.IsPressed())
+        if (interact.WasPressedThisFrame())
         {
             Vector3 screen_pos = Mouse.current.position.ReadValue();
             screen_pos.z = 10f;
             Vector3 world_pos = Camera.main.ScreenToWorldPoint(screen_pos);
             Vector2Int grid_pos = grid.GetGridPos(world_pos);
-            Debug.Log(grid_pos);
+
+            grid.MoveSelectSprite(grid_pos);
 
             if (HandleInteraction(grid_pos))
             {
@@ -42,6 +43,7 @@ public class TurnSystem : MonoBehaviour
         if (selected_entity == null)
         {
             selected_entity = new_selected;
+            selected_pos = grid_pos;
             return false;
         }
 
@@ -57,6 +59,9 @@ public class TurnSystem : MonoBehaviour
 
     void EndTurn()
     {
+        grid.RemoveSelectSprite();
+        selected_entity = null;
+        selected_pos = new(-1,-1);
         grid.MoveAllEnemies();
     }
 }
