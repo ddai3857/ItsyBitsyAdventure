@@ -169,6 +169,7 @@ public class Board : MonoBehaviour
             RemoveWeb(end_pos);
         }
 
+        line_renderer.enabled = false;
         successful_move = true;
     }
 
@@ -190,14 +191,7 @@ public class Board : MonoBehaviour
                    new(world_pos.x, world_pos.y, 0), 
                    Entity.move_speed)
                 .SetSpeedBased()
-                .SetEase(Entity.moving_ease).OnComplete(() =>
-                {
-                    if (next_pos == web_start)
-                    {
-                        line_renderer.enabled = false;
-                        return;
-                    }
-                });
+                .SetEase(Entity.moving_ease);
     }
 
     public IEnumerator WebStep(Entity e, Vector2Int curr_pos, Vector2Int next_pos, bool is_rock)
