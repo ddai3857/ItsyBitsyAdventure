@@ -73,6 +73,11 @@ public class Board : MonoBehaviour
     {
         Entity curr_entity = entity_grid[curr_pos.x, curr_pos.y];
 
+        if (curr_entity == null)
+        {
+            return false;
+        }
+
         Debug.Log(curr_entity + ": " + curr_pos +", " + next_pos);
 
         if (!IsValidMovePos(next_pos, curr_entity))
