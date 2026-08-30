@@ -208,6 +208,7 @@ public class Board : MonoBehaviour
     {
         Obstacle next_obs = obs_grid[next_pos.x, next_pos.y];
         Entity next_entity = entity_grid[next_pos.x, next_pos.y];
+        Web next_web = web_grid[next_pos.x, next_pos.y];
         if (!is_rock && (next_obs is Rock || next_entity is Enemy) && curr_pos != next_pos)
         {
             successful_web_move = false;
@@ -233,6 +234,11 @@ public class Board : MonoBehaviour
 
         if (is_rock)
         {
+            if (next_web != null)
+            {
+                Destroy(next_web);
+                web_grid[next_pos.x, next_pos.y] = null;
+            }
             if (next_obs != null)
             {
                 StartCoroutine(next_obs.Squish());
