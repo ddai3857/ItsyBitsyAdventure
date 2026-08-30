@@ -132,7 +132,6 @@ public class TurnSystem : MonoBehaviour
     IEnumerator EndTurn()
     {
         RemoveSelection();
-        grid.RemoveSelectMove();
         spooder_obj.GetComponent<Spooder>().UpdateTimer();
         yield return StartCoroutine(grid.MoveAllEnemies());
         curr_turn += 1;
