@@ -47,8 +47,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   rows: 10
   cols: 10
-  web_prefab: {fileID: 0}
-  select_sprite: {fileID: 0}
+  web_prefab: {fileID: 2745473332495526279, guid: 04e677a594283be42ac1d9229d54b231, type: 3}
+  select_prefab: {fileID: 7986515109657784447, guid: a64758e08c7002b4e8e8c44173a316b2, type: 3}
   camera: {fileID: 0}
   turn_system_obj: {fileID: 0}
   spooder_pos: {x: 0, y: 0}

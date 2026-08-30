@@ -61,6 +61,7 @@ public class TurnSystem : MonoBehaviour
 
         if (web.WasPressedThisFrame())
         {
+            RemoveSelection();
             Vector2Int grid_pos = GetMouseGridPos();
 
             if (grid.IsValidPos(grid_pos))
@@ -81,8 +82,6 @@ public class TurnSystem : MonoBehaviour
 
     IEnumerator HandleInteraction(Vector2Int grid_pos)
     {
-        Entity new_selected = grid.Get(grid_pos);
-        Web new_web = grid.GetWeb(grid_pos);
         if (selected_entity is Spooder)
         {
             yield return StartCoroutine(grid.Move(selected_pos, grid_pos));
@@ -103,9 +102,7 @@ public class TurnSystem : MonoBehaviour
             }
         } else
         {
-            selected_web = new_web;
-            selected_entity = new_selected;
-            selected_pos = grid_pos;
+            UpdateSelected(grid_pos);
             can_interact = true;
             yield break;
         }
@@ -114,21 +111,39 @@ public class TurnSystem : MonoBehaviour
         can_interact = true;
     }
 
+    void UpdateSelected(Vector2Int grid_pos)
+    {
+        Entity new_selected = grid.Get(grid_pos);
+        Web new_web = grid.GetWeb(grid_pos);
+        selected_web = new_web;
+        selected_entity = new_selected;
+        selected_pos = grid_pos;
+        grid.MoveSelectSprite(grid_pos);
+
+        if (selected_entity is Spooder)
+        {
+            grid.CreateSelectMove();
+        } else
+        {
+            grid.RemoveSelectMove();
+        }
+    }
+
     IEnumerator EndTurn()
     {
         RemoveSelection();
+        grid.RemoveSelectMove();
         spooder_obj.GetComponent<Spooder>().UpdateTimer();
         yield return StartCoroutine(grid.MoveAllEnemies());
         curr_turn += 1;
 
-        selected_pos = grid.GetSpooderPos();
-        selected_entity = grid.Get(selected_pos);
-        grid.MoveSelectSprite(selected_pos);
+        UpdateSelected(grid.GetSpooderPos());
     }
 
     void RemoveSelection()
     {
         grid.RemoveSelectSprite();
+        grid.RemoveSelectMove();
         selected_entity = null;
         selected_web = null;
         selected_pos = new(-1,-1);   
