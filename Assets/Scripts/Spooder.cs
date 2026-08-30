@@ -16,7 +16,7 @@ public class Spooder : Entity
 
     [SerializeField]
     public int web_place_range;
-
+    public WebUI web_ui;
     public void UpdateTimer()
     {
         if (max_web_charge == web_charge)
@@ -30,8 +30,11 @@ public class Spooder : Entity
         if (web_timer == web_cooldown)
         {
             web_charge = Mathf.Min(max_web_charge, web_charge + 1);
+            web_ui.UpdateWebCount(web_charge);
+
             web_timer = 0;
         }
+        web_ui.UpdateWebReload(web_timer);
     }
 
     public bool PlaceWeb()
@@ -39,6 +42,7 @@ public class Spooder : Entity
         if (web_charge > 0)
         {
             web_charge--;
+            web_ui.UpdateWebCount(web_charge);
             return true;
         }
         return false;
@@ -47,6 +51,7 @@ public class Spooder : Entity
     //TODO
     public void GetEaten()
     {
+        GetComponent<SpriteRenderer>().enabled = false;
         turn_system_obj.GetComponent<TurnSystem>().LoseGame();
     }
 

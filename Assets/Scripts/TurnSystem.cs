@@ -129,8 +129,7 @@ public class TurnSystem : MonoBehaviour
     {
         Debug.Log("YOU LOSE!");
         game_ended = true;
-        screen_fade.EaseOut(transform.position).OnComplete(() => SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex));
-        
+        screen_fade.EaseOut(spooder_obj.transform.position,1).OnComplete(() => SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex));
     }
 
     //TODO
@@ -142,11 +141,11 @@ public class TurnSystem : MonoBehaviour
         Levels.curr_unlock++;
         if (Levels.curr_level > 6)
         {
-            screen_fade.EaseOut(transform.position).OnComplete(() => SceneManager.LoadScene("Levels"));
+            screen_fade.EaseOut(spooder_obj.transform.position,1).OnComplete(() => SceneManager.LoadScene("Levels"));
         }
         else
         {
-            screen_fade.EaseOut(transform.position).OnComplete(() => SceneManager.LoadScene("Level" + (++Levels.curr_level)));
+            screen_fade.EaseOut(spooder_obj.transform.position,1).OnComplete(() => SceneManager.LoadScene("Level" + (++Levels.curr_level)));
         }
     }
 }
