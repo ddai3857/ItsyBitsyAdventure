@@ -4,10 +4,11 @@ using UnityEngine.UIElements;
 
 public class SceneFade : MonoBehaviour
 {
+    public float load_speed = 0.5F;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        EaseIn();
+        EaseIn(load_speed);
     }
 
     // Update is called once per frame
@@ -16,16 +17,16 @@ public class SceneFade : MonoBehaviour
         
     }
 
-    public Tween EaseIn()
+    public Tween EaseIn(float speed = 0.5F)
     {
-        return transform.DOScale(new Vector3(0,0,0), .5F)
+        return transform.DOScale(new Vector3(0,0,0), speed)
             .SetEase(Ease.InSine);
     }
 
-    public Tween EaseOut(Vector3 pos)
+    public Tween EaseOut(Vector3 pos, float speed = 0.5F)
     {
         transform.position = pos;
-        return transform.DOScale(new Vector3(20,20,20), .5F)
+        return transform.DOScale(new Vector3(20,20,20), speed)
             .SetEase(Ease.OutSine);
     }
 }

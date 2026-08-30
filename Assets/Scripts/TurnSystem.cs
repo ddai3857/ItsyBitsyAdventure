@@ -1,6 +1,8 @@
 using System.Collections;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 public class TurnSystem : MonoBehaviour
 {
@@ -19,6 +21,8 @@ public class TurnSystem : MonoBehaviour
 
     [SerializeField]
     GameObject spooder_obj;
+
+    public SceneFade screen_fade;
 
     public bool can_interact = true;
     public bool game_ended = false;
@@ -124,6 +128,8 @@ public class TurnSystem : MonoBehaviour
     {
         Debug.Log("YOU LOSE!");
         game_ended = true;
+        screen_fade.EaseOut(transform.position).OnComplete(() => SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex));
+        
     }
 
     //TODO
@@ -131,5 +137,14 @@ public class TurnSystem : MonoBehaviour
     {
         Debug.Log("YOU WIN!");
         game_ended = true;
+
+        if (curr_turn > 6)
+        {
+            screen_fade.EaseOut(transform.position).OnComplete(() => SceneManager.LoadScene("Levels"));
+        }
+        else
+        {
+            screen_fade.EaseOut(transform.position).OnComplete(() => SceneManager.LoadScene("Level" + (++curr_turn)));
+        }
     }
 }

@@ -9,6 +9,7 @@ public class Levels : MonoBehaviour
 {
     public List<Sprite> nums = new List<Sprite>(6);
     public Sprite cover;
+    public static int curr_level = 1;
     public static int curr_unlock = 1;
     public SceneFade screen_fade;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -35,6 +36,7 @@ public class Levels : MonoBehaviour
 
     public void LoadLevel(int idx)
     {
+        curr_level = idx;
         screen_fade.EaseOut(transform.GetChild(idx-1).position).OnComplete(() => SceneManager.LoadScene("Level" + idx));
     }
 

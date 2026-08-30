@@ -71,7 +71,7 @@ public class Rotate : MonoBehaviour
         if (menu_on)
         {
             print("MenuBack");
-            menu_screen.transform.DOMoveY(2000, 1)
+            menu_screen.GetComponent<RectTransform>().DOAnchorPosY(1000, 1)
             .SetEase(Ease.InElastic, 0.1F, 1)
             .OnComplete(() => menu_screen.SetActive(false));
             menu_on = false;
