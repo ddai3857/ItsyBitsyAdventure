@@ -16,20 +16,15 @@ public class Spooder : Entity
 
     [SerializeField]
     public int web_place_range;
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 
     public void UpdateTimer()
     {
+        if (max_web_charge == web_charge)
+        {
+            web_timer = 0;
+            return;
+        }
+
         web_timer += 1;
 
         if (web_timer == web_cooldown)

@@ -21,6 +21,7 @@ public class TurnSystem : MonoBehaviour
     GameObject spooder_obj;
 
     public bool can_interact = true;
+    public bool game_ended = false;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -31,7 +32,7 @@ public class TurnSystem : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (!can_interact)
+        if (!can_interact || game_ended)
         {
             return;
         }
@@ -122,11 +123,13 @@ public class TurnSystem : MonoBehaviour
     public void LoseGame()
     {
         Debug.Log("YOU LOSE!");
+        game_ended = true;
     }
 
     //TODO
     public void WinGame()
     {
         Debug.Log("YOU WIN!");
+        game_ended = true;
     }
 }

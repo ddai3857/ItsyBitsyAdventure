@@ -22,17 +22,20 @@ public class Board : MonoBehaviour
 
     [SerializeField]
     GameObject turn_system_obj;
+    TurnSystem turn_system;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     Entity[,] entity_grid;
     Obstacle[,] obs_grid;
     Web[,] web_grid;
 
+    [SerializeField]
     Vector2Int spooder_pos;
     Vector2Int spout_pos;
 
     bool successful_move = false;
     bool successful_web_move = false;
+    
     public bool CheckMoveStatus()
     {
         return successful_move;
@@ -45,6 +48,7 @@ public class Board : MonoBehaviour
         SetCameraPos();
         RemoveSelectSprite();
         SnapChildren();
+        turn_system = turn_system_obj.GetComponent<TurnSystem>();
     }
 
     // Update is called once per frame
@@ -176,7 +180,7 @@ public class Board : MonoBehaviour
                 StartCoroutine(next_obs.Squish());
                 if (next_obs is Spout)
                 {
-                    turn_system_obj.GetComponent<TurnSystem>().LoseGame();
+                    turn_system.LoseGame();
                 }
             } else if (next_entity != null && !(next_entity is Birb c && c.IsFlying()))
             {
@@ -240,17 +244,18 @@ public class Board : MonoBehaviour
 
         yield return StartCoroutine(curr_entity.Walk(GetWorldPos(next_pos)));
 
+        if (spooder_pos == spout_pos)
+        {
+            turn_system.WinGame();
+        } else if (curr_entity is Enemy && next_pos == spooder_pos)
+        {
+            Spooder s = entity_grid[spooder_pos.x, spooder_pos.y] as Spooder;
+            s.GetEaten();
+        }
+
         entity_grid[next_pos.x, next_pos.y] = curr_entity;
         entity_grid[curr_pos.x, curr_pos.y] = null;
         successful_move = true;
-
-        if (spooder_pos == spout_pos)
-        {
-            turn_system_obj.GetComponent<TurnSystem>().WinGame();
-        } else if (curr_entity is Enemy && next_pos == spooder_pos)
-        {
-            turn_system_obj.GetComponent<TurnSystem>().LoseGame();
-        }
     }
 
     bool IsValidMovePos(Vector2Int pos, Entity e)
@@ -283,12 +288,13 @@ public class Board : MonoBehaviour
             }
         }
 
+        loozard_list.AddRange(birb_list);
         foreach (Vector2Int pos in loozard_list)
         {
-            yield return StartCoroutine(Move(pos, BestEnemyMove(pos)));
-        }
-        foreach (Vector2Int pos in birb_list)
-        {
+            if (turn_system.game_ended)
+            {
+                yield break;
+            }
             yield return StartCoroutine(Move(pos, BestEnemyMove(pos)));
         }
     }

@@ -7,10 +7,4 @@ public class Obstacle : Entity
     {
         
     }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 }
