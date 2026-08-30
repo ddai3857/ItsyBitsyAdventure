@@ -3,15 +3,19 @@ using UnityEngine;
 [RequireComponent(typeof(SpriteRenderer))]
 public class Birb : Enemy
 {
-    int flying_speed = 2;
-    int walking_speed = 1;
-
     [SerializeField]
     Sprite walking_sprite;
+
+    bool is_flying = true;
+
+    public bool IsFlying()
+    {
+        return is_flying;
+    }
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        speed = flying_speed;
+
     }
 
     // Update is called once per frame
@@ -20,11 +24,12 @@ public class Birb : Enemy
         
     }
 
-    public new void GetStuck()
+    public override void GetStuck()
     {
-        GetComponent<SpriteRenderer>().sprite = walking_sprite;
-        speed = walking_speed;
-
+        SpriteRenderer sprite_renderer = GetComponent<SpriteRenderer>();
+        sprite_renderer.sprite = walking_sprite;
+        sprite_renderer.sortingOrder = 2;
+        is_flying = false;
         base.GetStuck();
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -26,6 +27,13 @@ public class Board : MonoBehaviour
 
     [SerializeField]
     Vector2Int spooder_pos;
+
+    bool successful_move = false;
+    bool successful_web_move = false;
+    public bool CheckMoveStatus()
+    {
+        return successful_move;
+    }
     void Start()
     {
         entity_grid = new Entity[rows, cols];
@@ -69,55 +77,119 @@ public class Board : MonoBehaviour
         return new Vector2(pos.x + 0.5f, pos.y + 0.5f);
     }
 
-    public bool WebMove(Vector2Int curr_pos, Vector2Int next_pos)
+    public IEnumerator WebMove(Vector2Int curr_pos, Vector2Int end_pos)
     {
-        if (curr_pos.x - next_pos.x != 0 && curr_pos.y - next_pos.y != 0)
+        Debug.Log(curr_pos + "," + end_pos);
+        if (curr_pos.x - end_pos.x != 0 && curr_pos.y - end_pos.y != 0)
         {
             Debug.Log("CAN'T MOVE ENEMIES DIAGONALLY");
-            return false;
+            successful_move = false;
+            yield break;
         }
 
-        if (entity_grid[next_pos.x,next_pos.y] != null)
+        if (entity_grid[end_pos.x,end_pos.y] != null)
         {
             Debug.Log("ANOTHER ENEMY IS IN THE WEB");
-            return false;
+            successful_move = false;
+            yield break;
         }
 
-        Enemy en = entity_grid[curr_pos.x, curr_pos.y] as Enemy;
+        Entity e = null;
 
-        if (en != null)
+        if (entity_grid[curr_pos.x, curr_pos.y] is Enemy en)
         {
+            e = en;
             if (en.IsStuck())
             {
                 Debug.Log("ENEMY ALREADY STUCK");
-                return false;
+                successful_move = false;
+                yield break;
             }
 
             en.GetStuck();
-
-            StartCoroutine(en.Walk(GetWorldPos(next_pos)));
-
-            entity_grid[next_pos.x, next_pos.y] = en;
-            entity_grid[curr_pos.x, curr_pos.y] = null;
-            return true;
-        }
-
-        Rock r = obs_grid[curr_pos.x, curr_pos.y] as Rock;
-        
-        if (r != null)
+        } else if (obs_grid[curr_pos.x, curr_pos.y] is Rock r)
         {
-            RemoveWeb(curr_pos);
-            StartCoroutine(r.Walk(GetWorldPos(next_pos)));
-
-            obs_grid[next_pos.x, next_pos.y] = r;
-            obs_grid[curr_pos.x, curr_pos.y] = null;
-            return true;
+            e = r;
+        } else
+        {
+            Debug.Log("NOTHING TO WEB");
+            successful_move = false;
+            yield break;
+        }
+        Vector2Int diff = end_pos - curr_pos;
+        Vector2Int dir;
+        if (diff.x != 0)
+        {
+            dir = new(Mathf.Abs(diff.x)/diff.x, 0);
+        } else
+        {
+            dir = new(0, Mathf.Abs(diff.y)/diff.y);
         }
 
-        return false;
+        successful_web_move = true;
+
+        Debug.Log("PERFORMING WEB_STEP");
+
+        while(curr_pos != end_pos && successful_web_move)
+        {
+            Vector2Int next_pos = curr_pos + dir;
+            yield return StartCoroutine(WebStep(e, curr_pos, next_pos, e is Rock));
+            curr_pos = next_pos;
+        }
+
+        if (e is Rock || !successful_web_move)
+        {
+            RemoveWeb(end_pos);
+        }
+
+        successful_move = true;
     }
 
-    public bool Move(Vector2Int curr_pos, Vector2Int next_pos)
+    public IEnumerator WebStep(Entity e, Vector2Int curr_pos, Vector2Int next_pos, bool is_rock)
+    {
+        Obstacle next_obs = obs_grid[next_pos.x, next_pos.y];
+        Entity next_entity = entity_grid[next_pos.x, next_pos.y];
+        if (!is_rock && (next_obs is Rock || next_entity is Enemy))
+        {
+            successful_web_move = false;
+            yield break;
+        }
+
+        yield return StartCoroutine(e.Walk(GetWorldPos(next_pos)));
+
+        if (next_obs is Water && !(e is Birb b && b.IsFlying()))
+        {
+            StartCoroutine(e.Shrink());
+            obs_grid[curr_pos.x, curr_pos.y] = null;
+            entity_grid[curr_pos.x, curr_pos.y] = null;
+            successful_web_move = false;
+            yield break;
+        }
+
+        if (is_rock)
+        {
+            if (next_obs != null)
+            {
+                StartCoroutine(next_obs.Squish());
+            } else if (next_entity != null && !(next_entity is Birb c && c.IsFlying()))
+            {
+                StartCoroutine(next_entity.Squish());
+                entity_grid[next_pos.x, next_pos.y] = null;
+            }
+            obs_grid[next_pos.x, next_pos.y] = e as Obstacle;
+            obs_grid[curr_pos.x, curr_pos.y] = null;
+        } else{
+            if (next_entity is Spooder s)
+            {
+                s.GetEaten();
+            }
+            entity_grid[next_pos.x, next_pos.y] = e as Enemy;
+            entity_grid[curr_pos.x, curr_pos.y] = null;
+        }
+    }
+
+
+    public IEnumerator Move(Vector2Int curr_pos, Vector2Int next_pos)
     {
         Entity curr_entity = entity_grid[curr_pos.x, curr_pos.y];
 
@@ -126,7 +198,8 @@ public class Board : MonoBehaviour
         if (!IsValidMovePos(next_pos, curr_entity))
         {
             Debug.Log("ENTITY IS ALREADY THERE OR OBSTACLE BLOCKING");
-            return false;
+            successful_move = false;
+            yield break;
         }
 
         if (curr_entity is Enemy e)
@@ -138,7 +211,8 @@ public class Board : MonoBehaviour
                     RemoveWeb(curr_pos);
                 }
 
-                return true;
+                successful_move = true;
+                yield break;
             }
 
             if (web_grid[next_pos.x, next_pos.y] != null)
@@ -150,17 +224,18 @@ public class Board : MonoBehaviour
             if (Vector2Int.Distance(curr_pos, next_pos) != 1)
             {
                 Debug.Log("OUT OF RANGE");
-                return false;
+                successful_move = false;
+                yield break;
             }
 
             spooder_pos = next_pos;
         }
 
-        StartCoroutine(curr_entity.Walk(GetWorldPos(next_pos)));
+        yield return StartCoroutine(curr_entity.Walk(GetWorldPos(next_pos)));
 
         entity_grid[next_pos.x, next_pos.y] = curr_entity;
         entity_grid[curr_pos.x, curr_pos.y] = null;
-        return true;
+        successful_move = true;
     }
 
     bool IsValidMovePos(Vector2Int pos, Entity e)
@@ -170,27 +245,36 @@ public class Board : MonoBehaviour
             return entity_grid[pos.x, pos.y] == null && obs_grid[pos.x, pos.y] == null;
         }
 
-        return entity_grid[pos.x, pos.y] is not Enemy && (obs_grid[pos.x, pos.y] == null || e is Birb);
+        return entity_grid[pos.x, pos.y] is not Enemy && (obs_grid[pos.x, pos.y] == null || e is Birb b && b.IsFlying());
     }
 
     //TODO
-    public void MoveAllEnemies()
+    public IEnumerator MoveAllEnemies()
     {
-        List<Vector2Int> move_list = new();
+        List<Vector2Int> loozard_list = new();
+        List<Vector2Int> birb_list = new();
         for (int x = 0; x < rows; x++)
         {
             for (int y = 0; y < cols; y++)
             {
-                if (entity_grid[x,y] is Enemy)
+                if (entity_grid[x,y] is Loozard)
                 {
-                    move_list.Add(new(x,y));
+                    loozard_list.Add(new(x,y));
+                }
+                if (entity_grid[x,y] is Birb)
+                {
+                    birb_list.Add(new(x,y));
                 }
             }
         }
 
-        foreach (Vector2Int pos in move_list)
+        foreach (Vector2Int pos in loozard_list)
         {
-            Move(pos, BestEnemyMove(pos));
+            yield return StartCoroutine(Move(pos, BestEnemyMove(pos)));
+        }
+        foreach (Vector2Int pos in birb_list)
+        {
+            yield return StartCoroutine(Move(pos, BestEnemyMove(pos)));
         }
     }
 
@@ -247,7 +331,16 @@ public class Board : MonoBehaviour
                 Vector2 world_pos = e.transform.position;
                 Vector2Int grid_pos = GetGridPos(world_pos);
                 e.transform.position = GetWorldPos(grid_pos);
-                if (entity_grid[grid_pos.x, grid_pos.y] == null)
+                if (e is Obstacle o)
+                {
+                    if (obs_grid[grid_pos.x, grid_pos.y] == null)
+                    {
+                        obs_grid[grid_pos.x, grid_pos.y] = o;
+                    } else
+                    {
+                        Debug.LogError("TWO OBSTACLES IN THE SAME SQUARE");
+                    }
+                } else if (entity_grid[grid_pos.x, grid_pos.y] == null)
                 {
                     entity_grid[grid_pos.x, grid_pos.y] = e;
                     if (e is Spooder)
