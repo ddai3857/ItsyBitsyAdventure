@@ -202,6 +202,12 @@ public class Board : MonoBehaviour
 
     public IEnumerator Move(Vector2Int curr_pos, Vector2Int next_pos)
     {
+        if (curr_pos == next_pos)
+        {
+            successful_move = false;
+            yield break;
+        }
+
         Entity curr_entity = entity_grid[curr_pos.x, curr_pos.y];
 
         Debug.Log(curr_entity + ": " + curr_pos +", " + next_pos);
@@ -398,7 +404,7 @@ public class Board : MonoBehaviour
     void SetCameraPos()
     {
         Vector3 camera_pos = GetWorldPos(new(rows / 2, cols / 2));
-        camera.transform.position = new(camera_pos.x - 0.5f, camera_pos.y - 0.5f, -10);
+        camera.transform.position = new(camera_pos.x - (1 - (rows % 2)) * 0.5f, camera_pos.y - (1 - (cols % 2)) * 0.5f, -10);
     }
 
     public bool IsValidPos(Vector2Int pos)
@@ -556,7 +562,7 @@ public class Board : MonoBehaviour
             if (!node.ContainsKey(curr))
             {
                 Debug.LogError($"{curr} and {dest} \n");
-                break;
+                return source;
             }
             else
             {
