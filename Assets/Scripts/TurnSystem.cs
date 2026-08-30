@@ -149,7 +149,7 @@ public class TurnSystem : MonoBehaviour
         game_ended = true;
 
         Levels.curr_unlock++;
-        if (Levels.curr_level > 6)
+        if (Levels.curr_level > Levels.max_level)
         {
             screen_fade.EaseOut(spooder_obj.transform.position,1).OnComplete(() => SceneManager.LoadScene("Levels"));
         }

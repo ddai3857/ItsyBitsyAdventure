@@ -11,6 +11,7 @@ public class Levels : MonoBehaviour
     public Sprite cover;
     public static int curr_level = 1;
     public static int curr_unlock = 1;
+    public static int max_level = 10;
     public SceneFade screen_fade;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
