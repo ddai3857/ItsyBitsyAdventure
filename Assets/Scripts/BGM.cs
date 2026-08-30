@@ -10,6 +10,7 @@ public class PersistentAudio : MonoBehaviour
         if (instance != null)
         {
             Destroy(gameObject);
+            Levels.curr_unlock = 1;
             return;
         }
 
