@@ -270,6 +270,17 @@ public class Board : MonoBehaviour
 
         Debug.Log(curr_entity + ": " + curr_pos +", " + next_pos);
 
+        if (curr_entity is Enemy e && e.IsStuck())
+        {
+            if (e.UpdateStuck())
+            {
+                RemoveWeb(curr_pos);
+            }
+
+            successful_move = true;
+            yield break;
+        }
+
         if (!IsValidMovePos(next_pos, curr_entity))
         {
             Debug.Log("ENTITY IS ALREADY THERE OR OBSTACLE BLOCKING");
@@ -277,31 +288,18 @@ public class Board : MonoBehaviour
             yield break;
         }
 
-        if (curr_entity is Enemy e)
+        if (Vector2Int.Distance(curr_pos, next_pos) != 1)
         {
-            if (e.IsStuck())
-            {
-                if (e.UpdateStuck())
-                {
-                    RemoveWeb(curr_pos);
-                }
-
-                successful_move = true;
-                yield break;
-            }
-        } else
-        {
-            if (Vector2Int.Distance(curr_pos, next_pos) != 1)
-            {
-                Debug.Log("OUT OF RANGE");
-                successful_move = false;
-                yield break;
-            }
-
-            spooder_pos = next_pos;
+            Debug.Log("OUT OF RANGE");
+            successful_move = false;
+            yield break;
         }
 
         yield return StartCoroutine(curr_entity.Walk(GetWorldPos(next_pos)));
+
+        if (curr_entity is Spooder) {
+            spooder_pos = next_pos;
+        }
 
         if (spooder_pos == spout_pos)
         {
