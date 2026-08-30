@@ -73,7 +73,7 @@ public class Board : MonoBehaviour
     {
         Entity curr_entity = entity_grid[curr_pos.x, curr_pos.y];
 
-        if (IsValidMovePos(next_pos, curr_entity is Birb))
+        if (!IsValidMovePos(next_pos, curr_entity))
         {
             Debug.Log("ENTITY IS ALREADY THERE OR OBSTACLE BLOCKING");
             return false;
@@ -114,7 +114,7 @@ public class Board : MonoBehaviour
             return false;
         }
 
-        curr_entity.Walk(GetWorldPos(next_pos));
+        StartCoroutine(curr_entity.Walk(GetWorldPos(next_pos)));
 
         entity_grid[next_pos.x, next_pos.y] = curr_entity;
         entity_grid[curr_pos.x, curr_pos.y] = null;
@@ -127,9 +127,14 @@ public class Board : MonoBehaviour
         return true;
     }
 
-    bool IsValidMovePos(Vector2Int pos, bool birb)
+    bool IsValidMovePos(Vector2Int pos, Entity e)
     {
-        return entity_grid[pos.x, pos.y] != null || (obs_grid[pos.x, pos.y] != null && !birb);
+        if (e is Spooder)
+        {
+            return entity_grid[pos.x, pos.y] == null && obs_grid[pos.x, pos.y] == null;
+        }
+
+        return entity_grid[pos.x, pos.y] is not Enemy && (obs_grid[pos.x, pos.y] == null || e is Birb);
     }
 
     //TODO
@@ -317,6 +322,8 @@ public class Board : MonoBehaviour
             Tuple<Vector2Int, float> first = heap.First();
             Vector2Int parent = first.Item1;
 
+            Debug.Log(parent);
+
             if (parent == dest)
             {
                 break;
@@ -334,7 +341,7 @@ public class Board : MonoBehaviour
                 Vector2Int child = parent + d;
 
                 // If child is a wall/obstacle, we skip
-                if (!IsValidPos(child) || !IsValidMovePos(child, e is Birb))
+                if (!IsValidPos(child) || !IsValidMovePos(child, e))
                 {
                     continue;
                 }
