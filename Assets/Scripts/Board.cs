@@ -222,12 +222,13 @@ public class Board : MonoBehaviour
         if (next_obs is Water)
         {
             StartCoroutine(e.Shrink());
+            entity_grid[curr_pos.x, curr_pos.y] = null;
             if (curr_pos != next_pos)
             {
                 obs_grid[curr_pos.x, curr_pos.y] = null;
-                entity_grid[curr_pos.x, curr_pos.y] = null;
                 successful_web_move = false;
             }
+            RemoveWeb(curr_pos);
             yield break;
         }
 
