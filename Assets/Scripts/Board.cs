@@ -3,7 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using DG.Tweening;
 
+[RequireComponent(typeof(LineRenderer))]
 public class Board : MonoBehaviour
 {
     [SerializeField]
@@ -35,6 +37,10 @@ public class Board : MonoBehaviour
 
     bool successful_move = false;
     bool successful_web_move = false;
+
+    LineRenderer line_renderer;
+    Vector2Int web_start;
+    Vector2Int web_end;
     
     public bool CheckMoveStatus()
     {
@@ -49,6 +55,13 @@ public class Board : MonoBehaviour
         RemoveSelectSprite();
         SnapChildren();
         turn_system = turn_system_obj.GetComponent<TurnSystem>();
+        line_renderer = GetComponent<LineRenderer>();
+        line_renderer.enabled = false;
+        line_renderer.startColor = Color.white;
+        line_renderer.endColor = Color.white;
+        line_renderer.startWidth = 0.05f;
+        line_renderer.startWidth = line_renderer.endWidth;
+        line_renderer.positionCount = 2; 
     }
 
     // Update is called once per frame
@@ -137,6 +150,8 @@ public class Board : MonoBehaviour
 
         Debug.Log("PERFORMING WEB_STEP");
 
+        web_start = end_pos;
+        web_end = curr_pos;
         while(curr_pos != end_pos && successful_web_move)
         {
             Vector2Int next_pos = curr_pos + dir;
@@ -152,6 +167,34 @@ public class Board : MonoBehaviour
         successful_move = true;
     }
 
+    public void UpdateWebLine(Vector2Int next_pos)
+    {
+        if (!line_renderer.enabled)
+        {
+            line_renderer.enabled = true;
+            line_renderer.SetPosition(0, GetWorldPos(web_start));
+            line_renderer.SetPosition(1, GetWorldPos(web_end));
+        }
+
+        Debug.Log(web_start + "," + web_end);
+
+        Vector2 world_pos = GetWorldPos(next_pos);
+
+        DOTween.To(() => line_renderer.GetPosition(1), 
+                   x => line_renderer.SetPosition(1, x), 
+                   new(world_pos.x, world_pos.y, 0), 
+                   Entity.move_speed)
+                .SetSpeedBased()
+                .SetEase(Entity.moving_ease).OnComplete(() =>
+                {
+                    if (next_pos == web_start)
+                    {
+                        line_renderer.enabled = false;
+                        return;
+                    }
+                });
+    }
+
     public IEnumerator WebStep(Entity e, Vector2Int curr_pos, Vector2Int next_pos, bool is_rock)
     {
         Obstacle next_obs = obs_grid[next_pos.x, next_pos.y];
@@ -162,6 +205,7 @@ public class Board : MonoBehaviour
             yield break;
         }
 
+        UpdateWebLine(next_pos);
         yield return StartCoroutine(e.Walk(GetWorldPos(next_pos)));
 
         if (next_obs is Water && !(e is Birb b && b.IsFlying()))

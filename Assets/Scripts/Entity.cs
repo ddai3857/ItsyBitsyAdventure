@@ -5,7 +5,7 @@ using System.Collections;
 [RequireComponent(typeof(SpriteRenderer))]
 public class Entity : MonoBehaviour
 {
-    readonly int move_speed = 2;
+    public static readonly int move_speed = 2;
     bool sprite_fliped = true;
     bool moving = false;
     float idle_flip_speed = 1f;
