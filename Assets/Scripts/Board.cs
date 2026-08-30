@@ -69,14 +69,57 @@ public class Board : MonoBehaviour
         return new Vector2(pos.x + 0.5f, pos.y + 0.5f);
     }
 
-    public bool Move(Vector2Int curr_pos, Vector2Int next_pos, bool web)
+    public bool WebMove(Vector2Int curr_pos, Vector2Int next_pos)
     {
-        Entity curr_entity = entity_grid[curr_pos.x, curr_pos.y];
-
-        if (curr_entity == null)
+        if (curr_pos.x - next_pos.x != 0 && curr_pos.y - next_pos.y != 0)
         {
+            Debug.Log("CAN'T MOVE ENEMIES DIAGONALLY");
             return false;
         }
+
+        if (entity_grid[next_pos.x,next_pos.y] != null)
+        {
+            Debug.Log("ANOTHER ENEMY IS IN THE WEB");
+            return false;
+        }
+
+        Enemy en = entity_grid[curr_pos.x, curr_pos.y] as Enemy;
+
+        if (en != null)
+        {
+            if (en.IsStuck())
+            {
+                Debug.Log("ENEMY ALREADY STUCK");
+                return false;
+            }
+
+            en.GetStuck();
+
+            StartCoroutine(en.Walk(GetWorldPos(next_pos)));
+
+            entity_grid[next_pos.x, next_pos.y] = en;
+            entity_grid[curr_pos.x, curr_pos.y] = null;
+            return true;
+        }
+
+        Rock r = obs_grid[curr_pos.x, curr_pos.y] as Rock;
+        
+        if (r != null)
+        {
+            RemoveWeb(curr_pos);
+            StartCoroutine(r.Walk(GetWorldPos(next_pos)));
+
+            obs_grid[next_pos.x, next_pos.y] = r;
+            obs_grid[curr_pos.x, curr_pos.y] = null;
+            return true;
+        }
+
+        return false;
+    }
+
+    public bool Move(Vector2Int curr_pos, Vector2Int next_pos)
+    {
+        Entity curr_entity = entity_grid[curr_pos.x, curr_pos.y];
 
         Debug.Log(curr_entity + ": " + curr_pos +", " + next_pos);
 
@@ -86,51 +129,37 @@ public class Board : MonoBehaviour
             return false;
         }
 
-        if (web)
+        if (curr_entity is Enemy e)
         {
-            if (curr_pos.x - next_pos.x != 0 && curr_pos.y - next_pos.y != 0)
+            if (e.IsStuck())
             {
-                Debug.Log("CAN'T MOVE ENEMIES DIAGONALLY");
-                return false;
-            }
-            if (curr_entity is Enemy e)
-            {
-                if (web)
-                {
-                    if (e.IsStuck())
-                    {
-                        Debug.Log("ENEMY ALREADY STUCK");
-                        return false;
-                    }
-
-                    e.GetStuck();
-                }
-                else if (web_grid[curr_pos.x, curr_pos.y] != null && e.UpdateStuck())
+                if (e.UpdateStuck())
                 {
                     RemoveWeb(curr_pos);
-                    return true;
                 }
-            } else
-            {
-                RemoveWeb(curr_pos);
+
+                return true;
             }
-            
-        } else if (Vector2Int.Distance(curr_pos, next_pos) > curr_entity.speed)
+
+            if (web_grid[next_pos.x, next_pos.y] != null)
+            {
+                e.GetStuck();
+            }
+        } else
         {
-            Debug.Log("OUT OF RANGE");
-            return false;
+            if (Vector2Int.Distance(curr_pos, next_pos) != 1)
+            {
+                Debug.Log("OUT OF RANGE");
+                return false;
+            }
+
+            spooder_pos = next_pos;
         }
 
         StartCoroutine(curr_entity.Walk(GetWorldPos(next_pos)));
 
         entity_grid[next_pos.x, next_pos.y] = curr_entity;
         entity_grid[curr_pos.x, curr_pos.y] = null;
-
-        if (curr_entity is Spooder)
-        {
-            spooder_pos = next_pos;
-        }
-
         return true;
     }
 
@@ -161,7 +190,7 @@ public class Board : MonoBehaviour
 
         foreach (Vector2Int pos in move_list)
         {
-            Move(pos, BestEnemyMove(pos), false);
+            Move(pos, BestEnemyMove(pos));
         }
     }
 
@@ -174,8 +203,7 @@ public class Board : MonoBehaviour
     public bool PlaceWeb(Vector2Int pos)
     {
         Spooder s = entity_grid[spooder_pos.x,spooder_pos.y] as Spooder;
-        Entity e = entity_grid[pos.x,pos.y];
-        if (Vector2Int.Distance(spooder_pos, pos) > s.web_place_range || e is Obstacle || web_grid[pos.x,pos.y] != null)
+        if (Vector2Int.Distance(spooder_pos, pos) > s.web_place_range || web_grid[pos.x,pos.y] != null || web_grid[pos.x,pos.y] != null)
         {
             return false;
         }
@@ -183,6 +211,11 @@ public class Board : MonoBehaviour
         if (!s.PlaceWeb())
         {
             return false;
+        }
+
+        if (entity_grid[pos.x,pos.y] is Enemy e)
+        {
+            e.GetStuck();
         }
 
         GameObject web_object = Instantiate(web_prefab);

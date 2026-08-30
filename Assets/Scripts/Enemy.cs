@@ -19,11 +19,10 @@ public class Enemy : Entity
 
     public bool UpdateStuck()
     {
-        curr_stuck += 1;
+        curr_stuck -= 1;
 
-        if (curr_stuck == stuck_turns)
+        if (curr_stuck == 0)
         {
-            curr_stuck = 0;
             return true;
         }
 

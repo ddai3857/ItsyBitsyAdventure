@@ -46,10 +46,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   speed: 1
-  move_speed: 1
   max_web_charge: 3
   web_charge: 3
-  web_cooldown: 2
+  web_cooldown: 3
   web_place_range: 1
 --- !u!212 &3301788193160468134
 SpriteRenderer:
