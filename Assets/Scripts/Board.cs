@@ -129,30 +129,37 @@ public class Board : MonoBehaviour
             return false;
         }
 
-        if (curr_entity is Enemy e && e.IsStuck())
+        if (curr_entity is Enemy e)
         {
-            if (e.UpdateStuck())
+            if (e.IsStuck())
             {
-                RemoveWeb(curr_pos);
+                if (e.UpdateStuck())
+                {
+                    RemoveWeb(curr_pos);
+                }
+
+                return true;
             }
 
-            return true;
-        } else if (Vector2Int.Distance(curr_pos, next_pos) > curr_entity.speed)
+            if (web_grid[next_pos.x, next_pos.y] != null)
+            {
+                e.GetStuck();
+            }
+        } else
         {
-            Debug.Log("OUT OF RANGE");
-            return false;
+            if (Vector2Int.Distance(curr_pos, next_pos) != 1)
+            {
+                Debug.Log("OUT OF RANGE");
+                return false;
+            }
+
+            spooder_pos = next_pos;
         }
 
         StartCoroutine(curr_entity.Walk(GetWorldPos(next_pos)));
 
         entity_grid[next_pos.x, next_pos.y] = curr_entity;
         entity_grid[curr_pos.x, curr_pos.y] = null;
-
-        if (curr_entity is Spooder)
-        {
-            spooder_pos = next_pos;
-        }
-
         return true;
     }
 
@@ -196,8 +203,7 @@ public class Board : MonoBehaviour
     public bool PlaceWeb(Vector2Int pos)
     {
         Spooder s = entity_grid[spooder_pos.x,spooder_pos.y] as Spooder;
-        Entity e = entity_grid[pos.x,pos.y];
-        if (Vector2Int.Distance(spooder_pos, pos) > s.web_place_range || e is Obstacle || web_grid[pos.x,pos.y] != null)
+        if (Vector2Int.Distance(spooder_pos, pos) > s.web_place_range || web_grid[pos.x,pos.y] != null || web_grid[pos.x,pos.y] != null)
         {
             return false;
         }
@@ -205,6 +211,11 @@ public class Board : MonoBehaviour
         if (!s.PlaceWeb())
         {
             return false;
+        }
+
+        if (entity_grid[pos.x,pos.y] is Enemy e)
+        {
+            e.GetStuck();
         }
 
         GameObject web_object = Instantiate(web_prefab);

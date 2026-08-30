@@ -15,6 +15,9 @@ public class TurnSystem : MonoBehaviour
 
     [SerializeField]
     Board grid;
+
+    [SerializeField]
+    GameObject spooder_obj;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -95,6 +98,7 @@ public class TurnSystem : MonoBehaviour
     {
         RemoveSelection();
         grid.MoveAllEnemies();
+        spooder_obj.GetComponent<Spooder>().UpdateTimer();
     }
 
     void RemoveSelection()
