@@ -164,9 +164,6 @@ public class Board : MonoBehaviour
 
         yield return StartCoroutine(e.Walk(GetWorldPos(next_pos)));
 
-        Debug.Log(next_obs is Water);
-        Debug.Log(!(e is Birb d && d.IsFlying()));
-
         if (next_obs is Water && !(e is Birb b && b.IsFlying()))
         {
             StartCoroutine(e.Shrink());
@@ -190,15 +187,15 @@ public class Board : MonoBehaviour
                 StartCoroutine(next_entity.Squish());
                 entity_grid[next_pos.x, next_pos.y] = null;
             }
-            obs_grid[next_pos.x, next_pos.y] = e as Obstacle;
             obs_grid[curr_pos.x, curr_pos.y] = null;
+            obs_grid[next_pos.x, next_pos.y] = e as Obstacle;
         } else{
             if (next_entity is Spooder s)
             {
                 s.GetEaten();
             }
-            entity_grid[next_pos.x, next_pos.y] = e as Enemy;
             entity_grid[curr_pos.x, curr_pos.y] = null;
+            entity_grid[next_pos.x, next_pos.y] = e as Enemy;
         }
     }
 
@@ -248,12 +245,6 @@ public class Board : MonoBehaviour
 
         yield return StartCoroutine(curr_entity.Walk(GetWorldPos(next_pos)));
 
-        if (curr_entity is Enemy en && web_grid[next_pos.x, next_pos.y] != null)
-        {
-            en.GetStuck();
-            StartCoroutine(WebStep(en, next_pos, next_pos, false));
-        }
-
         if (spooder_pos == spout_pos)
         {
             turn_system.WinGame();
@@ -266,6 +257,12 @@ public class Board : MonoBehaviour
         entity_grid[next_pos.x, next_pos.y] = curr_entity;
         entity_grid[curr_pos.x, curr_pos.y] = null;
         successful_move = true;
+
+        if (curr_entity is Enemy en && web_grid[next_pos.x, next_pos.y] != null)
+        {
+            en.GetStuck();
+            StartCoroutine(WebStep(en, next_pos, next_pos, false));
+        }
     }
 
     bool IsValidMovePos(Vector2Int pos, Entity e)
@@ -275,7 +272,12 @@ public class Board : MonoBehaviour
             return entity_grid[pos.x, pos.y] == null && (obs_grid[pos.x, pos.y] is Spout || obs_grid[pos.x, pos.y] == null);
         }
 
-        return entity_grid[pos.x, pos.y] is not Enemy && (obs_grid[pos.x, pos.y] == null || e is Birb b && b.IsFlying());
+        if (e is Birb b && b.IsFlying())
+        {
+            return (entity_grid[pos.x, pos.y] is not Enemy) && (obs_grid[pos.x, pos.y] is not DarkGrass);
+        }
+
+        return (entity_grid[pos.x, pos.y] is not Enemy) && (obs_grid[pos.x, pos.y] == null);
     }
 
     //TODO

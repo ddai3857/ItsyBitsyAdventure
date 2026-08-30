@@ -60,6 +60,7 @@ public class TurnSystem : MonoBehaviour
             if (grid.IsValidPos(grid_pos))
             {
                 grid.PlaceWeb(grid_pos);
+                RemoveSelection();
             }
         }
     }
