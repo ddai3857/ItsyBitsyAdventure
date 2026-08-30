@@ -15,6 +15,7 @@ public class TurnSystem : MonoBehaviour
     Vector2Int selected_pos = new(-1,-1);
     InputAction interact;
     InputAction web;
+    InputAction restart;
 
     [SerializeField]
     Board grid;
@@ -31,11 +32,16 @@ public class TurnSystem : MonoBehaviour
     {
         interact = InputSystem.actions.FindAction("Interact");
         web = InputSystem.actions.FindAction("Web");
+        restart = InputSystem.actions.FindAction("Restart");
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (restart.WasPressedThisFrame())
+        {
+            LoseGame();
+        }
         if (!can_interact || game_ended)
         {
             return;
@@ -114,6 +120,10 @@ public class TurnSystem : MonoBehaviour
         spooder_obj.GetComponent<Spooder>().UpdateTimer();
         yield return StartCoroutine(grid.MoveAllEnemies());
         curr_turn += 1;
+
+        selected_pos = grid.GetSpooderPos();
+        selected_entity = grid.Get(selected_pos);
+        grid.MoveSelectSprite(selected_pos);
     }
 
     void RemoveSelection()

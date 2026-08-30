@@ -70,6 +70,11 @@ public class Board : MonoBehaviour
         
     }
 
+    public Vector2Int GetSpooderPos()
+    {
+        return spooder_pos;
+    }
+
     public Entity Get(Vector2Int grid_pos)
     {
         if (grid_pos.x < rows && grid_pos.y < cols)
@@ -205,7 +210,9 @@ public class Board : MonoBehaviour
             yield break;
         }
 
-        UpdateWebLine(next_pos);
+        if (curr_pos != next_pos) {
+            UpdateWebLine(next_pos);
+        }
         yield return StartCoroutine(e.Walk(GetWorldPos(next_pos)));
 
         if (next_obs is Water && !(e is Birb b && b.IsFlying()))
