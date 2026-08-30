@@ -477,7 +477,7 @@ public class Board : MonoBehaviour
         {
             Vector2Int new_pos = spooder_pos + d;
             Spooder s = entity_grid[spooder_pos.x, spooder_pos.y] as Spooder;
-            if (IsValidMovePos(new_pos, s))
+            if (IsValidPos(new_pos) && IsValidMovePos(new_pos, s))
             {
                 GameObject obj = Instantiate(select_prefab);
                 Vector2 world_pos = GetWorldPos(new_pos);
