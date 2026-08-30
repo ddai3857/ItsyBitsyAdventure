@@ -3307,10 +3307,6 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 3873859}
     - target: {fileID: 5927266761771512126, guid: d951534b228e92c45b72a2e1d833b96d, type: 3}
-      propertyPath: web_prefab
-      value: 
-      objectReference: {fileID: 2745473332495526279, guid: 04e677a594283be42ac1d9229d54b231, type: 3}
-    - target: {fileID: 5927266761771512126, guid: d951534b228e92c45b72a2e1d833b96d, type: 3}
       propertyPath: select_sprite
       value: 
       objectReference: {fileID: 1805371814}

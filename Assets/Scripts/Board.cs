@@ -222,9 +222,12 @@ public class Board : MonoBehaviour
         if (next_obs is Water)
         {
             StartCoroutine(e.Shrink());
-            obs_grid[curr_pos.x, curr_pos.y] = null;
-            entity_grid[curr_pos.x, curr_pos.y] = null;
-            successful_web_move = false;
+            if (curr_pos != next_pos)
+            {
+                obs_grid[curr_pos.x, curr_pos.y] = null;
+                entity_grid[curr_pos.x, curr_pos.y] = null;
+                successful_web_move = false;
+            }
             yield break;
         }
 
@@ -484,7 +487,7 @@ public class Board : MonoBehaviour
                 obj.transform.position = new(world_pos.x, world_pos.y, 0);
                 SpriteRenderer renderer = obj.GetComponent<SpriteRenderer>();
                 Color temp = renderer.color;
-                temp.a = 0.7f;
+                temp.a = 0.5f;
                 renderer.enabled = true;
                 renderer.color = temp;
                 select_moves.Add(obj);
